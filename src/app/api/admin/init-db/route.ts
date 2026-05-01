@@ -205,7 +205,7 @@ const HAIRSTYLES = [
     category: "classic",
     description: "Clean #2 all over. Low-maintenance, unmissable jawline.",
     prompt: "buzz cut with a number 2 guard all over, uniform short length, sharp hairline",
-    thumbnailUrl: "https://images.unsplash.com/photo-1593702363108-2bcb3a0050cf?w=600&h=450&fit=crop&q=80",
+    thumbnailUrl: "https://images.unsplash.com/photo-1611080626919-7cf5a9dbab5b?w=600&h=450&fit=crop&q=80",
   },
   {
     slug: "edge-up-design",
@@ -214,7 +214,7 @@ const HAIRSTYLES = [
     description: "Razor-sharp edge-up with a custom hairline detail.",
     prompt:
       "low fade haircut with a razor-sharp edge-up and a single clean line design carved into the side, hairline detail",
-    thumbnailUrl: "https://images.unsplash.com/photo-1593702288056-f6df51ee1a5d?w=600&h=450&fit=crop&q=80",
+    thumbnailUrl: "https://images.unsplash.com/photo-1622287162716-f311baa1a2b8?w=600&h=450&fit=crop&q=80",
   },
 ];
 
