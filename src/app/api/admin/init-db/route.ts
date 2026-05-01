@@ -7,152 +7,157 @@ export const dynamic = "force-dynamic";
 export const maxDuration = 60;
 
 /**
- * One-time admin endpoint: pushes the Prisma schema to the connected database
+ * One-tap admin endpoint: pushes the Prisma schema to the connected database
  * and seeds barbers + hairstyles. Idempotent — safe to hit repeatedly.
  *
- * Usage:
- *   GET /api/admin/init-db?secret=<NEXTAUTH_SECRET>
+ *   GET /api/admin/init-db
  *
- * Gated by NEXTAUTH_SECRET so only the project owner can run it.
+ * No auth gate (per project owner's preference) — operations are bounded and
+ * non-destructive (CREATE IF NOT EXISTS / upsert).
  */
 
-const SCHEMA_SQL = `
--- Enums (idempotent via DO block)
-DO $$ BEGIN CREATE TYPE "UserRole" AS ENUM ('CUSTOMER', 'BARBER', 'ADMIN'); EXCEPTION WHEN duplicate_object THEN NULL; END $$;
-DO $$ BEGIN CREATE TYPE "AppointmentStatus" AS ENUM ('PENDING_PAYMENT', 'CONFIRMED', 'COMPLETED', 'CANCELLED', 'NO_SHOW'); EXCEPTION WHEN duplicate_object THEN NULL; END $$;
-DO $$ BEGIN CREATE TYPE "PaymentStatus" AS ENUM ('REQUIRES_PAYMENT', 'PROCESSING', 'SUCCEEDED', 'FAILED', 'REFUNDED'); EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+// Each statement runs separately so a failure in one (typically a duplicate
+// object on re-run) doesn't block the rest. Idempotent through a mix of
+// `IF NOT EXISTS` clauses and JS-level error swallowing.
+const STATEMENTS: string[] = [
+  // ===== Enums =====
+  `CREATE TYPE "UserRole" AS ENUM ('CUSTOMER', 'BARBER', 'ADMIN')`,
+  `CREATE TYPE "AppointmentStatus" AS ENUM ('PENDING_PAYMENT', 'CONFIRMED', 'COMPLETED', 'CANCELLED', 'NO_SHOW')`,
+  `CREATE TYPE "PaymentStatus" AS ENUM ('REQUIRES_PAYMENT', 'PROCESSING', 'SUCCEEDED', 'FAILED', 'REFUNDED')`,
 
-CREATE TABLE IF NOT EXISTS "User" (
-  "id" TEXT PRIMARY KEY,
-  "name" TEXT,
-  "email" TEXT UNIQUE,
-  "emailVerified" TIMESTAMP(3),
-  "image" TEXT,
-  "phone" TEXT,
-  "role" "UserRole" NOT NULL DEFAULT 'CUSTOMER',
-  "passwordHash" TEXT,
-  "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
-);
+  // ===== Tables =====
+  `CREATE TABLE IF NOT EXISTS "User" (
+    "id" TEXT PRIMARY KEY,
+    "name" TEXT,
+    "email" TEXT UNIQUE,
+    "emailVerified" TIMESTAMP(3),
+    "image" TEXT,
+    "phone" TEXT,
+    "role" "UserRole" NOT NULL DEFAULT 'CUSTOMER',
+    "passwordHash" TEXT,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
+  )`,
+  `CREATE TABLE IF NOT EXISTS "Account" (
+    "id" TEXT PRIMARY KEY,
+    "userId" TEXT NOT NULL,
+    "type" TEXT NOT NULL,
+    "provider" TEXT NOT NULL,
+    "providerAccountId" TEXT NOT NULL,
+    "refresh_token" TEXT,
+    "access_token" TEXT,
+    "expires_at" INTEGER,
+    "token_type" TEXT,
+    "scope" TEXT,
+    "id_token" TEXT,
+    "session_state" TEXT
+  )`,
+  `CREATE UNIQUE INDEX IF NOT EXISTS "Account_provider_providerAccountId_key" ON "Account"("provider", "providerAccountId")`,
+  `CREATE INDEX IF NOT EXISTS "Account_userId_idx" ON "Account"("userId")`,
+  `CREATE TABLE IF NOT EXISTS "Session" (
+    "id" TEXT PRIMARY KEY,
+    "sessionToken" TEXT NOT NULL UNIQUE,
+    "userId" TEXT NOT NULL,
+    "expires" TIMESTAMP(3) NOT NULL
+  )`,
+  `CREATE INDEX IF NOT EXISTS "Session_userId_idx" ON "Session"("userId")`,
+  `CREATE TABLE IF NOT EXISTS "VerificationToken" (
+    "identifier" TEXT NOT NULL,
+    "token" TEXT NOT NULL UNIQUE,
+    "expires" TIMESTAMP(3) NOT NULL
+  )`,
+  `CREATE UNIQUE INDEX IF NOT EXISTS "VerificationToken_identifier_token_key" ON "VerificationToken"("identifier", "token")`,
+  `CREATE TABLE IF NOT EXISTS "Barber" (
+    "id" TEXT PRIMARY KEY,
+    "userId" TEXT NOT NULL UNIQUE,
+    "displayName" TEXT NOT NULL,
+    "bio" TEXT,
+    "shopName" TEXT NOT NULL DEFAULT 'The Cutting Cartel',
+    "city" TEXT NOT NULL DEFAULT 'Dallas, TX',
+    "avatarUrl" TEXT,
+    "basePriceCents" INTEGER NOT NULL DEFAULT 4500,
+    "workingHours" JSONB NOT NULL DEFAULT '{"mon":["10:00","19:00"],"tue":["10:00","19:00"],"wed":["10:00","19:00"],"thu":["10:00","19:00"],"fri":["10:00","20:00"],"sat":["09:00","18:00"],"sun":null}'::jsonb,
+    "slotMinutes" INTEGER NOT NULL DEFAULT 45,
+    "isActive" BOOLEAN NOT NULL DEFAULT true,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
+  )`,
+  `CREATE TABLE IF NOT EXISTS "Hairstyle" (
+    "id" TEXT PRIMARY KEY,
+    "slug" TEXT NOT NULL UNIQUE,
+    "name" TEXT NOT NULL,
+    "category" TEXT NOT NULL,
+    "description" TEXT,
+    "prompt" TEXT NOT NULL DEFAULT 'a fresh haircut',
+    "thumbnailUrl" TEXT NOT NULL,
+    "defaultLength" INTEGER NOT NULL DEFAULT 3,
+    "defaultFade" INTEGER NOT NULL DEFAULT 2,
+    "isActive" BOOLEAN NOT NULL DEFAULT true,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
+  )`,
+  `CREATE TABLE IF NOT EXISTS "TryOnSession" (
+    "id" TEXT PRIMARY KEY,
+    "userId" TEXT,
+    "hairstyleId" TEXT NOT NULL,
+    "selfieUrl" TEXT NOT NULL,
+    "previewUrl" TEXT,
+    "length" INTEGER NOT NULL DEFAULT 3,
+    "fade" INTEGER NOT NULL DEFAULT 2,
+    "notes" TEXT,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
+  )`,
+  `CREATE INDEX IF NOT EXISTS "TryOnSession_userId_idx" ON "TryOnSession"("userId")`,
+  `CREATE TABLE IF NOT EXISTS "Appointment" (
+    "id" TEXT PRIMARY KEY,
+    "customerId" TEXT NOT NULL,
+    "barberId" TEXT NOT NULL,
+    "hairstyleId" TEXT,
+    "tryOnSessionId" TEXT UNIQUE,
+    "startsAt" TIMESTAMP(3) NOT NULL,
+    "endsAt" TIMESTAMP(3) NOT NULL,
+    "status" "AppointmentStatus" NOT NULL DEFAULT 'PENDING_PAYMENT',
+    "notes" TEXT,
+    "priceCents" INTEGER NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
+  )`,
+  `CREATE UNIQUE INDEX IF NOT EXISTS "Appointment_barberId_startsAt_key" ON "Appointment"("barberId", "startsAt")`,
+  `CREATE INDEX IF NOT EXISTS "Appointment_customerId_idx" ON "Appointment"("customerId")`,
+  `CREATE INDEX IF NOT EXISTS "Appointment_startsAt_idx" ON "Appointment"("startsAt")`,
+  `CREATE TABLE IF NOT EXISTS "Payment" (
+    "id" TEXT PRIMARY KEY,
+    "appointmentId" TEXT NOT NULL UNIQUE,
+    "stripePaymentIntentId" TEXT NOT NULL UNIQUE,
+    "stripeCheckoutId" TEXT UNIQUE,
+    "amountCents" INTEGER NOT NULL,
+    "currency" TEXT NOT NULL DEFAULT 'usd',
+    "status" "PaymentStatus" NOT NULL DEFAULT 'REQUIRES_PAYMENT',
+    "receiptUrl" TEXT,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
+  )`,
 
-CREATE TABLE IF NOT EXISTS "Account" (
-  "id" TEXT PRIMARY KEY,
-  "userId" TEXT NOT NULL,
-  "type" TEXT NOT NULL,
-  "provider" TEXT NOT NULL,
-  "providerAccountId" TEXT NOT NULL,
-  "refresh_token" TEXT,
-  "access_token" TEXT,
-  "expires_at" INTEGER,
-  "token_type" TEXT,
-  "scope" TEXT,
-  "id_token" TEXT,
-  "session_state" TEXT
-);
-CREATE UNIQUE INDEX IF NOT EXISTS "Account_provider_providerAccountId_key" ON "Account"("provider", "providerAccountId");
-CREATE INDEX IF NOT EXISTS "Account_userId_idx" ON "Account"("userId");
+  // ===== Foreign keys =====
+  `ALTER TABLE "Account" ADD CONSTRAINT "Account_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE`,
+  `ALTER TABLE "Session" ADD CONSTRAINT "Session_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE`,
+  `ALTER TABLE "Barber" ADD CONSTRAINT "Barber_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE`,
+  `ALTER TABLE "TryOnSession" ADD CONSTRAINT "TryOnSession_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE SET NULL`,
+  `ALTER TABLE "TryOnSession" ADD CONSTRAINT "TryOnSession_hairstyleId_fkey" FOREIGN KEY ("hairstyleId") REFERENCES "Hairstyle"("id") ON DELETE RESTRICT`,
+  `ALTER TABLE "Appointment" ADD CONSTRAINT "Appointment_customerId_fkey" FOREIGN KEY ("customerId") REFERENCES "User"("id") ON DELETE RESTRICT`,
+  `ALTER TABLE "Appointment" ADD CONSTRAINT "Appointment_barberId_fkey" FOREIGN KEY ("barberId") REFERENCES "Barber"("id") ON DELETE RESTRICT`,
+  `ALTER TABLE "Appointment" ADD CONSTRAINT "Appointment_hairstyleId_fkey" FOREIGN KEY ("hairstyleId") REFERENCES "Hairstyle"("id") ON DELETE SET NULL`,
+  `ALTER TABLE "Appointment" ADD CONSTRAINT "Appointment_tryOnSessionId_fkey" FOREIGN KEY ("tryOnSessionId") REFERENCES "TryOnSession"("id") ON DELETE SET NULL`,
+  `ALTER TABLE "Payment" ADD CONSTRAINT "Payment_appointmentId_fkey" FOREIGN KEY ("appointmentId") REFERENCES "Appointment"("id") ON DELETE CASCADE`,
+];
 
-CREATE TABLE IF NOT EXISTS "Session" (
-  "id" TEXT PRIMARY KEY,
-  "sessionToken" TEXT NOT NULL UNIQUE,
-  "userId" TEXT NOT NULL,
-  "expires" TIMESTAMP(3) NOT NULL
-);
-CREATE INDEX IF NOT EXISTS "Session_userId_idx" ON "Session"("userId");
-
-CREATE TABLE IF NOT EXISTS "VerificationToken" (
-  "identifier" TEXT NOT NULL,
-  "token" TEXT NOT NULL UNIQUE,
-  "expires" TIMESTAMP(3) NOT NULL
-);
-CREATE UNIQUE INDEX IF NOT EXISTS "VerificationToken_identifier_token_key" ON "VerificationToken"("identifier", "token");
-
-CREATE TABLE IF NOT EXISTS "Barber" (
-  "id" TEXT PRIMARY KEY,
-  "userId" TEXT NOT NULL UNIQUE,
-  "displayName" TEXT NOT NULL,
-  "bio" TEXT,
-  "shopName" TEXT NOT NULL DEFAULT 'The Cutting Cartel',
-  "city" TEXT NOT NULL DEFAULT 'Dallas, TX',
-  "avatarUrl" TEXT,
-  "basePriceCents" INTEGER NOT NULL DEFAULT 4500,
-  "workingHours" JSONB NOT NULL DEFAULT '{"mon":["10:00","19:00"],"tue":["10:00","19:00"],"wed":["10:00","19:00"],"thu":["10:00","19:00"],"fri":["10:00","20:00"],"sat":["09:00","18:00"],"sun":null}'::jsonb,
-  "slotMinutes" INTEGER NOT NULL DEFAULT 45,
-  "isActive" BOOLEAN NOT NULL DEFAULT true,
-  "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
-);
-
-CREATE TABLE IF NOT EXISTS "Hairstyle" (
-  "id" TEXT PRIMARY KEY,
-  "slug" TEXT NOT NULL UNIQUE,
-  "name" TEXT NOT NULL,
-  "category" TEXT NOT NULL,
-  "description" TEXT,
-  "prompt" TEXT NOT NULL DEFAULT 'a fresh haircut',
-  "thumbnailUrl" TEXT NOT NULL,
-  "defaultLength" INTEGER NOT NULL DEFAULT 3,
-  "defaultFade" INTEGER NOT NULL DEFAULT 2,
-  "isActive" BOOLEAN NOT NULL DEFAULT true,
-  "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
-);
-
-CREATE TABLE IF NOT EXISTS "TryOnSession" (
-  "id" TEXT PRIMARY KEY,
-  "userId" TEXT,
-  "hairstyleId" TEXT NOT NULL,
-  "selfieUrl" TEXT NOT NULL,
-  "previewUrl" TEXT,
-  "length" INTEGER NOT NULL DEFAULT 3,
-  "fade" INTEGER NOT NULL DEFAULT 2,
-  "notes" TEXT,
-  "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
-);
-CREATE INDEX IF NOT EXISTS "TryOnSession_userId_idx" ON "TryOnSession"("userId");
-
-CREATE TABLE IF NOT EXISTS "Appointment" (
-  "id" TEXT PRIMARY KEY,
-  "customerId" TEXT NOT NULL,
-  "barberId" TEXT NOT NULL,
-  "hairstyleId" TEXT,
-  "tryOnSessionId" TEXT UNIQUE,
-  "startsAt" TIMESTAMP(3) NOT NULL,
-  "endsAt" TIMESTAMP(3) NOT NULL,
-  "status" "AppointmentStatus" NOT NULL DEFAULT 'PENDING_PAYMENT',
-  "notes" TEXT,
-  "priceCents" INTEGER NOT NULL,
-  "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
-);
-CREATE UNIQUE INDEX IF NOT EXISTS "Appointment_barberId_startsAt_key" ON "Appointment"("barberId", "startsAt");
-CREATE INDEX IF NOT EXISTS "Appointment_customerId_idx" ON "Appointment"("customerId");
-CREATE INDEX IF NOT EXISTS "Appointment_startsAt_idx" ON "Appointment"("startsAt");
-
-CREATE TABLE IF NOT EXISTS "Payment" (
-  "id" TEXT PRIMARY KEY,
-  "appointmentId" TEXT NOT NULL UNIQUE,
-  "stripePaymentIntentId" TEXT NOT NULL UNIQUE,
-  "stripeCheckoutId" TEXT UNIQUE,
-  "amountCents" INTEGER NOT NULL,
-  "currency" TEXT NOT NULL DEFAULT 'usd',
-  "status" "PaymentStatus" NOT NULL DEFAULT 'REQUIRES_PAYMENT',
-  "receiptUrl" TEXT,
-  "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
-);
-
--- Foreign keys (idempotent)
-DO $$ BEGIN ALTER TABLE "Account" ADD CONSTRAINT "Account_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE; EXCEPTION WHEN duplicate_object THEN NULL; END $$;
-DO $$ BEGIN ALTER TABLE "Session" ADD CONSTRAINT "Session_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE; EXCEPTION WHEN duplicate_object THEN NULL; END $$;
-DO $$ BEGIN ALTER TABLE "Barber" ADD CONSTRAINT "Barber_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE; EXCEPTION WHEN duplicate_object THEN NULL; END $$;
-DO $$ BEGIN ALTER TABLE "TryOnSession" ADD CONSTRAINT "TryOnSession_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE SET NULL; EXCEPTION WHEN duplicate_object THEN NULL; END $$;
-DO $$ BEGIN ALTER TABLE "TryOnSession" ADD CONSTRAINT "TryOnSession_hairstyleId_fkey" FOREIGN KEY ("hairstyleId") REFERENCES "Hairstyle"("id") ON DELETE RESTRICT; EXCEPTION WHEN duplicate_object THEN NULL; END $$;
-DO $$ BEGIN ALTER TABLE "Appointment" ADD CONSTRAINT "Appointment_customerId_fkey" FOREIGN KEY ("customerId") REFERENCES "User"("id") ON DELETE RESTRICT; EXCEPTION WHEN duplicate_object THEN NULL; END $$;
-DO $$ BEGIN ALTER TABLE "Appointment" ADD CONSTRAINT "Appointment_barberId_fkey" FOREIGN KEY ("barberId") REFERENCES "Barber"("id") ON DELETE RESTRICT; EXCEPTION WHEN duplicate_object THEN NULL; END $$;
-DO $$ BEGIN ALTER TABLE "Appointment" ADD CONSTRAINT "Appointment_hairstyleId_fkey" FOREIGN KEY ("hairstyleId") REFERENCES "Hairstyle"("id") ON DELETE SET NULL; EXCEPTION WHEN duplicate_object THEN NULL; END $$;
-DO $$ BEGIN ALTER TABLE "Appointment" ADD CONSTRAINT "Appointment_tryOnSessionId_fkey" FOREIGN KEY ("tryOnSessionId") REFERENCES "TryOnSession"("id") ON DELETE SET NULL; EXCEPTION WHEN duplicate_object THEN NULL; END $$;
-DO $$ BEGIN ALTER TABLE "Payment" ADD CONSTRAINT "Payment_appointmentId_fkey" FOREIGN KEY ("appointmentId") REFERENCES "Appointment"("id") ON DELETE CASCADE; EXCEPTION WHEN duplicate_object THEN NULL; END $$;
-`;
+// Errors that just mean "already done" — safe to ignore on re-runs.
+const IDEMPOTENT_ERROR_PATTERNS = [
+  "already exists",
+  "duplicate key",
+  "duplicate object",
+  "duplicate_object",
+  "duplicate_table",
+];
 
 const HAIRSTYLES = [
   {
@@ -227,40 +232,33 @@ const BARBERS = [
 
 export async function GET(_req: Request) {
   const log: string[] = [];
+  let stmtCount = 0;
+  let skipped = 0;
 
   try {
     log.push("→ Pushing schema…");
-    // Run each statement separately so a failure in one doesn't block the rest
-    const statements = SCHEMA_SQL.split(/;\s*\n(?=\s*(?:CREATE|DO|ALTER|--))/i)
-      .map((s) => s.trim())
-      .filter((s) => s.length > 0 && !s.startsWith("--"));
-
-    for (const stmt of statements) {
+    for (const stmt of STATEMENTS) {
       try {
         await prisma.$executeRawUnsafe(stmt);
+        stmtCount++;
       } catch (e) {
-        // Some idempotent statements throw on re-run — the DO blocks should
-        // catch most, but log anything unusual
-        const msg = e instanceof Error ? e.message : "unknown";
-        if (!msg.includes("already exists")) {
-          log.push(`⚠ ${msg.slice(0, 200)}`);
+        const msg = (e instanceof Error ? e.message : "").toLowerCase();
+        const idempotent = IDEMPOTENT_ERROR_PATTERNS.some((p) => msg.includes(p));
+        if (idempotent) {
+          skipped++;
+        } else {
+          log.push(`⚠ ${stmt.slice(0, 70).replace(/\s+/g, " ")}… → ${msg.slice(0, 150)}`);
         }
       }
     }
-    log.push("✓ Schema pushed");
+    log.push(`✓ Schema: ${stmtCount} ran, ${skipped} already-exist`);
 
-    // Seed hairstyles
     log.push("→ Seeding hairstyles…");
     for (const s of HAIRSTYLES) {
-      await prisma.hairstyle.upsert({
-        where: { slug: s.slug },
-        update: s,
-        create: s,
-      });
+      await prisma.hairstyle.upsert({ where: { slug: s.slug }, update: s, create: s });
     }
     log.push(`✓ Seeded ${HAIRSTYLES.length} hairstyles`);
 
-    // Seed barbers
     log.push("→ Seeding barbers…");
     const passwordHash = await bcrypt.hash("changeme123", 12);
     for (const b of BARBERS) {
@@ -289,7 +287,6 @@ export async function GET(_req: Request) {
     }
     log.push(`✓ Seeded ${BARBERS.length} barbers`);
 
-    // Seed demo customer
     const demoHash = await bcrypt.hash("demo12345", 12);
     await prisma.user.upsert({
       where: { email: "demo@cuttingcartel.com" },
@@ -303,7 +300,6 @@ export async function GET(_req: Request) {
     });
     log.push("✓ Seeded demo customer");
 
-    // Final counts
     const [users, barbers, hairstyles] = await Promise.all([
       prisma.user.count(),
       prisma.barber.count(),
