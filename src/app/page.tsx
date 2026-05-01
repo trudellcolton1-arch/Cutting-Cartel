@@ -23,19 +23,19 @@ export default async function Home() {
     <div>
       {/* Hero */}
       <section className="relative overflow-hidden">
-        {/* Teflon Cutz mascot — faded into the hero background */}
+        {/* Teflon Cutz mascot — faded into the hero background, fully visible */}
         <div
           className="pointer-events-none absolute inset-x-0 top-0 -z-0 h-[680px] bg-no-repeat md:h-[760px]"
           style={{
             backgroundImage:
               "url('/A4D9A22C-1FA9-4603-8021-CC8F0BCBE8C1.jpeg')",
-            backgroundPosition: "right -40px top -40px",
-            backgroundSize: "min(620px, 70vw) auto",
+            backgroundPosition: "right 12px top 12px",
+            backgroundSize: "min(560px, 80vw) auto",
             opacity: 0.18,
             maskImage:
-              "linear-gradient(to bottom, rgba(0,0,0,1) 0%, rgba(0,0,0,0.85) 50%, rgba(0,0,0,0) 95%)",
+              "linear-gradient(to bottom, rgba(0,0,0,1) 0%, rgba(0,0,0,0.85) 55%, rgba(0,0,0,0) 100%)",
             WebkitMaskImage:
-              "linear-gradient(to bottom, rgba(0,0,0,1) 0%, rgba(0,0,0,0.85) 50%, rgba(0,0,0,0) 95%)",
+              "linear-gradient(to bottom, rgba(0,0,0,1) 0%, rgba(0,0,0,0.85) 55%, rgba(0,0,0,0) 100%)",
           }}
           aria-hidden
         />
