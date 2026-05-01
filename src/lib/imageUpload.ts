@@ -55,13 +55,13 @@ function loadImage(source: Blob): Promise<HTMLImageElement> {
   });
 }
 
-/** Direct unsigned upload to Cloudinary. Reports progress 0..1. */
-export function uploadDirectToCloudinary(
+/** Direct unsigned upload to Cloudinary using a public preset. Reports progress 0..1. */
+export function uploadDirectUnsigned(
   blob: Blob,
   opts: { folder?: string; onProgress?: (p: number) => void } = {}
 ): Promise<{ url: string; width: number; height: number }> {
   if (!isDirectUploadConfigured()) {
-    return Promise.reject(new Error("Direct upload not configured"));
+    return Promise.reject(new Error("Unsigned upload not configured"));
   }
 
   const fd = new FormData();
@@ -69,20 +69,60 @@ export function uploadDirectToCloudinary(
   fd.append("upload_preset", UPLOAD_PRESET);
   if (opts.folder) fd.append("folder", opts.folder);
 
+  return xhrUpload(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`, fd, opts.onProgress);
+}
+
+/**
+ * Direct signed upload to Cloudinary. Fetches a signature from /api/upload-sign
+ * and uploads the file straight to Cloudinary's CDN — no slow base64 round-trip
+ * through our server. Works as long as CLOUDINARY_API_* env vars are set;
+ * doesn't require an unsigned preset to be created in the Cloudinary dashboard.
+ */
+export async function uploadDirectSigned(
+  blob: Blob,
+  opts: { onProgress?: (p: number) => void } = {}
+): Promise<{ url: string; width: number; height: number }> {
+  const sigRes = await fetch("/api/upload-sign");
+  if (!sigRes.ok) throw new Error(`upload-sign ${sigRes.status}`);
+  const sig = (await sigRes.json()) as {
+    cloudName: string;
+    apiKey: string;
+    timestamp: number;
+    signature: string;
+    folder: string;
+  };
+
+  const fd = new FormData();
+  fd.append("file", blob);
+  fd.append("api_key", sig.apiKey);
+  fd.append("timestamp", String(sig.timestamp));
+  fd.append("signature", sig.signature);
+  fd.append("folder", sig.folder);
+
+  return xhrUpload(
+    `https://api.cloudinary.com/v1_1/${sig.cloudName}/image/upload`,
+    fd,
+    opts.onProgress
+  );
+}
+
+function xhrUpload(
+  url: string,
+  fd: FormData,
+  onProgress?: (p: number) => void
+): Promise<{ url: string; width: number; height: number }> {
   return new Promise((resolve, reject) => {
     const xhr = new XMLHttpRequest();
-    xhr.open("POST", `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`);
+    xhr.open("POST", url);
     xhr.upload.onprogress = (e) => {
-      if (e.lengthComputable && opts.onProgress) {
-        opts.onProgress(e.loaded / e.total);
-      }
+      if (e.lengthComputable && onProgress) onProgress(e.loaded / e.total);
     };
     xhr.onload = () => {
       if (xhr.status >= 200 && xhr.status < 300) {
         try {
           const j = JSON.parse(xhr.responseText);
           resolve({ url: j.secure_url, width: j.width, height: j.height });
-        } catch (e) {
+        } catch {
           reject(new Error("Bad Cloudinary response"));
         }
       } else {
@@ -122,8 +162,14 @@ function blobToDataUrl(blob: Blob): Promise<string> {
 }
 
 /**
- * Best-path upload for selfies: resize, then prefer direct → fall back to server.
- * Returns the public URL plus a progress callback that fires 0..1.
+ * Best-path upload for selfies. In order of preference:
+ *   1. Direct unsigned upload (needs NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET set,
+ *      requires no server hop — fastest)
+ *   2. Direct signed upload (fetches a signature from our server but uploads
+ *      to Cloudinary directly from the browser — also fast, zero Cloudinary
+ *      dashboard setup needed)
+ *   3. Slow server-side base64 fallback (always works as long as
+ *      CLOUDINARY_API_* server vars are set)
  */
 export async function uploadSelfie(
   file: File | Blob,
@@ -133,18 +179,25 @@ export async function uploadSelfie(
 
   if (isDirectUploadConfigured()) {
     try {
-      const { url } = await uploadDirectToCloudinary(resized, {
+      const { url } = await uploadDirectUnsigned(resized, {
         folder: "cutline-ai/selfie",
         onProgress,
       });
       onProgress?.(1);
       return url;
     } catch (e) {
-      console.warn("[upload] direct failed, falling back to server", e);
+      console.warn("[upload] unsigned failed, trying signed", e);
     }
   }
 
-  // server fallback (no progress events available)
+  try {
+    const { url } = await uploadDirectSigned(resized, { onProgress });
+    onProgress?.(1);
+    return url;
+  } catch (e) {
+    console.warn("[upload] signed failed, falling back to server", e);
+  }
+
   onProgress?.(0.5);
   const { url } = await uploadViaServer(resized, "selfie");
   onProgress?.(1);

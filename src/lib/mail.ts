@@ -68,10 +68,28 @@ function row(label: string, value: string) {
   return `<tr><td style="padding:6px 0;color:rgba(250,250,247,0.6);font-size:13px;">${label}</td><td style="padding:6px 0;font-size:13px;font-weight:600;text-align:right;">${value}</td></tr>`;
 }
 
+/**
+ * Returns the email recipients that should be notified for any new booking.
+ * BARBER_NOTIFICATION_EMAILS env var (comma-separated) overrides the barber's
+ * own user.email so Brian can route notifications anywhere — useful when the
+ * seeded user.email isn't his real inbox.
+ */
+function notificationRecipients(barberEmail: string | null): string[] {
+  const override = process.env.BARBER_NOTIFICATION_EMAILS;
+  if (override) {
+    return override
+      .split(",")
+      .map((e) => e.trim())
+      .filter(Boolean);
+  }
+  return barberEmail ? [barberEmail] : [];
+}
+
 /** Notify the barber that an appointment confirmed and is ready for the chair. */
 export async function sendBarberAppointmentEmail(a: AppointmentEmail) {
   const t = getTransport();
-  if (!t || !a.barber.userEmail) return;
+  const recipients = notificationRecipients(a.barber.userEmail);
+  if (!t || recipients.length === 0) return;
 
   const detailsTable = `<table width="100%" style="margin:16px 0;border-collapse:collapse;">
     ${row("Customer", a.customer.name ?? a.customer.email ?? "—")}
@@ -112,7 +130,7 @@ export async function sendBarberAppointmentEmail(a: AppointmentEmail) {
 
   await t.sendMail({
     from: process.env.EMAIL_FROM,
-    to: a.barber.userEmail,
+    to: recipients,
     subject: `New booking · ${format(a.startsAt, "EEE MMM d, h:mm a")} · ${a.customer.name ?? "Customer"}`,
     html,
   });
