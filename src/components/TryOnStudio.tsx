@@ -121,17 +121,18 @@ export function TryOnStudio({
     onFile(file);
   };
 
-  // Re-generate when style/length/fade change (debounced — we don't want to
-  // spam Replicate while someone drags the slider).
+  // Re-generate when style/length/fade change. Debounced — and we wait until
+  // any in-flight generation finishes before kicking off a new one so we don't
+  // stack requests against Replicate's rate limit.
   useEffect(() => {
     if (!selfieRemoteUrl || !selected) return;
+    if (genState === "generating" || genState === "uploading") return;
     const handle = setTimeout(() => {
       generate(selfieRemoteUrl, selected.id, length, fade);
-    }, 350);
+    }, 500);
     return () => clearTimeout(handle);
-    // intentionally exclude `generate` (stable from useCallback)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedId, length, fade, selfieRemoteUrl]);
+  }, [selectedId, length, fade, selfieRemoteUrl, genState]);
 
   const lockInCut = async () => {
     if (!selfieRemoteUrl || !previewUrl || !selected) {

@@ -72,6 +72,11 @@ const NEGATIVE_PROMPT =
  * Generate a photoreal preview of the customer with the requested cut.
  * Returns the Replicate output image URL (valid for ~1h — re-upload to
  * Cloudinary for permanence on lock-in).
+ *
+ * Retries up to 3 times on 429 (rate limited), respecting Replicate's
+ * `retry_after` hint when present. New accounts have a tighter rate
+ * limit until they hit $5+ in credit, so a short retry-with-backoff
+ * smooths over the friction.
  */
 export async function generateCutPreview(input: CutlineGenInput): Promise<string> {
   if (!isReplicateConfigured()) {
@@ -81,28 +86,50 @@ export async function generateCutPreview(input: CutlineGenInput): Promise<string
   const prompt = buildPrompt(input);
   const model = (process.env.REPLICATE_MODEL_VERSION ?? DEFAULT_MODEL) as `${string}/${string}:${string}`;
 
-  const output = await replicate.run(model, {
-    input: {
-      prompt,
-      main_face_image: input.selfieUrl,
-      negative_prompt: NEGATIVE_PROMPT,
-      num_steps: 20,
-      guidance_scale: 4,
-      id_weight: 1.05,
-      width: 768,
-      height: 1024,
-      num_outputs: 1,
-      seed: undefined,
-      output_format: "png",
-      output_quality: 92,
-    },
-  });
+  const params = {
+    prompt,
+    main_face_image: input.selfieUrl,
+    negative_prompt: NEGATIVE_PROMPT,
+    num_steps: 20,
+    guidance_scale: 4,
+    id_weight: 1.05,
+    width: 768,
+    height: 1024,
+    num_outputs: 1,
+    seed: undefined,
+    output_format: "png",
+    output_quality: 92,
+  };
 
-  // Replicate returns either a string, an array of strings, or FileOutput-like
-  // objects depending on SDK version. Normalize to the first URL.
-  const url = extractUrl(output);
-  if (!url) throw new Error("Replicate returned no image");
-  return url;
+  const maxAttempts = 3;
+  let attempt = 0;
+  let lastErr: unknown = null;
+
+  while (attempt < maxAttempts) {
+    attempt++;
+    try {
+      const output = await replicate.run(model, { input: params });
+      const url = extractUrl(output);
+      if (!url) throw new Error("Replicate returned no image");
+      return url;
+    } catch (e) {
+      lastErr = e;
+      const message = e instanceof Error ? e.message : String(e);
+      const is429 = /429|too many requests|throttle/i.test(message);
+      if (!is429 || attempt >= maxAttempts) break;
+
+      // Try to extract a retry_after hint Replicate includes in the body.
+      const hintMatch = message.match(/retry_after"?\s*:\s*(\d+)/i);
+      const hintSec = hintMatch ? Math.min(20, Math.max(2, parseInt(hintMatch[1], 10))) : 0;
+      const backoffSec = hintSec || Math.min(15, 2 * 2 ** (attempt - 1)); // 2, 4, 8…
+      console.warn(
+        `[replicate] 429 on attempt ${attempt}/${maxAttempts}, waiting ${backoffSec}s before retry`
+      );
+      await new Promise((r) => setTimeout(r, backoffSec * 1000));
+    }
+  }
+
+  throw lastErr instanceof Error ? lastErr : new Error("Generation failed");
 }
 
 function extractUrl(output: unknown): string | null {
