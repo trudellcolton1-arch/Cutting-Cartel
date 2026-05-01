@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Camera, Upload, Lock, RefreshCw, Sliders, Sparkles, Wand2 } from "lucide-react";
 import type { Hairstyle } from "@prisma/client";
 import { CameraCapture } from "@/components/CameraCapture";
+import { uploadSelfie } from "@/lib/imageUpload";
 
 type GenState = "idle" | "uploading" | "generating" | "done" | "error";
 
@@ -29,6 +30,7 @@ export function TryOnStudio({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [cameraOpen, setCameraOpen] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   // increment to abort stale generation responses
@@ -36,19 +38,15 @@ export function TryOnStudio({
 
   const selected = styles.find((s) => s.id === selectedId);
 
-  // Upload selfie once to Cloudinary so we can pass an https URL to Replicate.
-  const uploadSelfie = useCallback(async (dataUrl: string): Promise<string | null> => {
+  // Resize + direct-upload the selfie to Cloudinary in the browser.
+  // Reports 0..1 progress; falls back to /api/upload if direct isn't configured.
+  const handleSelfieUpload = useCallback(async (file: File): Promise<string | null> => {
     setGenState("uploading");
     setStatus("Uploading selfie…");
+    setUploadProgress(0);
     try {
-      const res = await fetch("/api/upload", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ data: dataUrl, kind: "selfie" }),
-      });
-      if (!res.ok) throw new Error("upload failed");
-      const json = await res.json();
-      return json.url as string;
+      const url = await uploadSelfie(file, (p) => setUploadProgress(p));
+      return url;
     } catch (e) {
       console.error(e);
       setError("Upload failed. Try again.");
@@ -92,23 +90,25 @@ export function TryOnStudio({
     []
   );
 
-  // When user picks a new selfie, upload + auto-generate with the current style.
-  const onFile = (file: File) => {
+  // When user picks a new selfie:
+  //   1. Show local preview INSTANTLY via object URL (no FileReader/base64 wait)
+  //   2. Resize + direct-upload to Cloudinary in parallel (1-3s)
+  //   3. As soon as the URL comes back, kick off Replicate generation
+  const onFile = async (file: File) => {
     if (!file.type.startsWith("image/")) {
       setError("That doesn't look like an image.");
       return;
     }
-    const reader = new FileReader();
-    reader.onload = async () => {
-      const dataUrl = reader.result as string;
-      setSelfieDataUrl(dataUrl);
-      setPreviewUrl(null);
-      const remote = await uploadSelfie(dataUrl);
-      if (!remote) return;
-      setSelfieRemoteUrl(remote);
-      if (selected) generate(remote, selected.id, length, fade);
-    };
-    reader.readAsDataURL(file);
+    // instant local preview
+    const objectUrl = URL.createObjectURL(file);
+    setSelfieDataUrl(objectUrl);
+    setPreviewUrl(null);
+    setError(null);
+
+    const remote = await handleSelfieUpload(file);
+    if (!remote) return;
+    setSelfieRemoteUrl(remote);
+    if (selected) generate(remote, selected.id, length, fade);
   };
 
   const openCamera = () => {
@@ -220,7 +220,14 @@ export function TryOnStudio({
                       </span>
                     </div>
                     <div className="mt-2 h-1 w-48 overflow-hidden rounded-full bg-ink-700">
-                      <div className="h-full w-1/2 animate-[loader_1.4s_ease-in-out_infinite] bg-cartel-500" />
+                      {genState === "uploading" ? (
+                        <div
+                          className="h-full bg-cartel-500 transition-[width] duration-150"
+                          style={{ width: `${Math.max(8, Math.round(uploadProgress * 100))}%` }}
+                        />
+                      ) : (
+                        <div className="h-full w-1/2 animate-[loader_1.4s_ease-in-out_infinite] bg-cartel-500" />
+                      )}
                     </div>
                   </div>
                 </div>
