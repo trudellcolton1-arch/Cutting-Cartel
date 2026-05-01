@@ -63,14 +63,6 @@ const BARBERS = [
     basePriceCents: 6500,
     slotMinutes: 45,
   },
-  {
-    email: "marcus@cuttingcartel.com",
-    name: "Marcus J.",
-    displayName: "Marcus J.",
-    bio: "Specialist in textured tops and design work. 8 years on the chair.",
-    basePriceCents: 5500,
-    slotMinutes: 45,
-  },
 ];
 
 async function main() {

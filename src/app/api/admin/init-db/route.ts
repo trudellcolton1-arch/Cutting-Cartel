@@ -220,15 +220,12 @@ const BARBERS = [
     basePriceCents: 6500,
     slotMinutes: 45,
   },
-  {
-    email: "marcus@cuttingcartel.com",
-    name: "Marcus J.",
-    displayName: "Marcus J.",
-    bio: "Specialist in textured tops and design work. 8 years on the chair.",
-    basePriceCents: 5500,
-    slotMinutes: 45,
-  },
 ];
+
+// Removed barbers — wipe from prior seeds. We delete the Barber row first
+// (the User row may still want to exist if they have past appointments, but
+// since these were placeholder seeds they have no real data tied to them).
+const REMOVED_BARBER_EMAILS = ["marcus@cuttingcartel.com"];
 
 export async function GET(_req: Request) {
   const log: string[] = [];
@@ -285,7 +282,23 @@ export async function GET(_req: Request) {
         },
       });
     }
-    log.push(`✓ Seeded ${BARBERS.length} barbers`);
+    log.push(`✓ Seeded ${BARBERS.length} barber${BARBERS.length === 1 ? "" : "s"}`);
+
+    // Wipe placeholder barbers we no longer want around
+    let removed = 0;
+    for (const email of REMOVED_BARBER_EMAILS) {
+      const user = await prisma.user.findUnique({ where: { email } });
+      if (!user) continue;
+      // Delete the barber profile, then the user. CASCADE on Barber.userId
+      // means deleting the user also drops the barber row.
+      try {
+        await prisma.user.delete({ where: { id: user.id } });
+        removed++;
+      } catch (e) {
+        log.push(`⚠ couldn't remove ${email}: ${e instanceof Error ? e.message.slice(0, 100) : "unknown"}`);
+      }
+    }
+    if (removed > 0) log.push(`✓ Removed ${removed} placeholder barber${removed === 1 ? "" : "s"}`);
 
     const demoHash = await bcrypt.hash("demo12345", 12);
     await prisma.user.upsert({
