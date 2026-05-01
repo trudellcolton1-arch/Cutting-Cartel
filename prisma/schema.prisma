@@ -83,8 +83,8 @@ model Barber {
   city        String   @default("Dallas, TX")
   avatarUrl   String?
   // base price retained for back-compat; new bookings use the per-cut prices below
-  basePriceCents Int   @default(5000)
-  priceAdultCents Int  @default(5000)  // $50 default
+  basePriceCents Int   @default(6000)
+  priceAdultCents Int  @default(6000)  // $60 default
   priceKidCents   Int  @default(2000)  // $20 default
   // 30-min slots, expressed as a JSON map of weekday -> [start, end] in 24h "HH:mm"
   workingHours   Json  @default("{\"mon\":[\"10:00\",\"19:00\"],\"tue\":[\"10:00\",\"19:00\"],\"wed\":[\"10:00\",\"19:00\"],\"thu\":[\"10:00\",\"19:00\"],\"fri\":[\"10:00\",\"20:00\"],\"sat\":[\"09:00\",\"18:00\"],\"sun\":null}")

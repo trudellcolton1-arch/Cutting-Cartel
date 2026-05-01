@@ -58,7 +58,7 @@ export function BookingFlow({ barbers, tryOn }: { barbers: Barber[]; tryOn: TryO
   const priceCents =
     cutType === "kid"
       ? barber?.priceKidCents ?? 2000
-      : barber?.priceAdultCents ?? 5000;
+      : barber?.priceAdultCents ?? 6000;
 
   const dateOptions = useMemo(() => {
     const out: { value: string; label: string }[] = [];
@@ -169,7 +169,7 @@ export function BookingFlow({ barbers, tryOn }: { barbers: Barber[]; tryOn: TryO
             <ChoiceTile
               icon={<User className="h-4 w-4" />}
               label="Adult cut"
-              price={barber?.priceAdultCents ?? 5000}
+              price={barber?.priceAdultCents ?? 6000}
               selected={cutType === "adult"}
               onClick={() => setCutType("adult")}
             />

@@ -97,7 +97,15 @@ function notificationRecipients(barberEmail: string | null): string[] {
 export async function sendBarberAppointmentEmail(a: AppointmentEmail) {
   const t = getTransport();
   const recipients = notificationRecipients(a.barber.userEmail);
-  if (!t || recipients.length === 0) return;
+  if (!t) {
+    console.warn("[mail] barber email skipped — SMTP not configured");
+    return;
+  }
+  if (recipients.length === 0) {
+    console.warn("[mail] barber email skipped — no recipients (barber.user.email empty and BARBER_NOTIFICATION_EMAILS unset)");
+    return;
+  }
+  console.log(`[mail] sending barber email to ${recipients.join(", ")} for appt ${a.appointmentId}`);
 
   const cutTypeLabel = a.cutType === "kid" ? "Kids cut" : "Adult cut";
   const paymentLabel =
@@ -142,18 +150,32 @@ export async function sendBarberAppointmentEmail(a: AppointmentEmail) {
     </div>`
   );
 
-  await t.sendMail({
-    from: process.env.EMAIL_FROM,
-    to: recipients,
-    subject: `New booking · ${fmtSubject(a.startsAt)} · ${a.customer.name ?? "Customer"}`,
-    html,
-  });
+  try {
+    const info = await t.sendMail({
+      from: process.env.EMAIL_FROM,
+      to: recipients,
+      subject: `New booking · ${fmtSubject(a.startsAt)} · ${a.customer.name ?? "Customer"}`,
+      html,
+    });
+    console.log(`[mail] barber email accepted: messageId=${info.messageId}`);
+  } catch (e) {
+    console.error("[mail] barber email send FAILED:", e instanceof Error ? e.message : e);
+    throw e;
+  }
 }
 
 /** Confirm the appointment to the customer with all the details. */
 export async function sendCustomerAppointmentEmail(a: AppointmentEmail) {
   const t = getTransport();
-  if (!t || !a.customer.email) return;
+  if (!t) {
+    console.warn("[mail] customer email skipped — SMTP not configured");
+    return;
+  }
+  if (!a.customer.email) {
+    console.warn("[mail] customer email skipped — customer has no email on file");
+    return;
+  }
+  console.log(`[mail] sending customer email to ${a.customer.email} for appt ${a.appointmentId}`);
 
   const cutTypeLabel = a.cutType === "kid" ? "Kids cut" : "Adult cut";
   const paymentLabel =
@@ -188,12 +210,18 @@ export async function sendCustomerAppointmentEmail(a: AppointmentEmail) {
     </p>`
   );
 
-  await t.sendMail({
-    from: process.env.EMAIL_FROM,
-    to: a.customer.email,
-    subject: `Booked · ${fmtSubject(a.startsAt)} with ${a.barber.displayName}`,
-    html,
-  });
+  try {
+    const info = await t.sendMail({
+      from: process.env.EMAIL_FROM,
+      to: a.customer.email,
+      subject: `Booked · ${fmtSubject(a.startsAt)} with ${a.barber.displayName}`,
+      html,
+    });
+    console.log(`[mail] customer email accepted: messageId=${info.messageId}`);
+  } catch (e) {
+    console.error("[mail] customer email send FAILED:", e instanceof Error ? e.message : e);
+    throw e;
+  }
 }
 
 function escapeHtml(s: string) {
