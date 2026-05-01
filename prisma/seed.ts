@@ -10,7 +10,7 @@ const STYLES = [
     category: "fade",
     description: "Clean low fade with a tousled, textured crown.",
     prompt: "low fade haircut with textured tousled crown, soft messy top, sharp temple line",
-    thumbnailUrl: "https://images.unsplash.com/photo-1599351431202-1e0f0137899a?w=600&h=450&fit=crop&q=80",
+    thumbnailUrl: "https://images.unsplash.com/photo-1622286342621-4bd786c2447c?w=600&h=450&fit=crop&q=80",
   },
   {
     slug: "mid-fade-pompadour",
@@ -18,7 +18,7 @@ const STYLES = [
     category: "fade",
     description: "Classic mid fade lifting into a polished pompadour.",
     prompt: "mid fade haircut with a polished pompadour swept up and back, glossy classic styling",
-    thumbnailUrl: "https://images.unsplash.com/photo-1583195764036-6dc248ac07d9?w=600&h=450&fit=crop&q=80",
+    thumbnailUrl: "https://images.unsplash.com/photo-1605497788044-5a32c7078486?w=600&h=450&fit=crop&q=80",
   },
   {
     slug: "high-skin-fade",
@@ -26,7 +26,7 @@ const STYLES = [
     category: "fade",
     description: "Sharp skin fade up high with length kept on top.",
     prompt: "high skin fade haircut, completely shaved sides up high, length kept on top, razor sharp transition",
-    thumbnailUrl: "https://images.unsplash.com/photo-1593702275687-f8b402bf1fb5?w=600&h=450&fit=crop&q=80",
+    thumbnailUrl: "https://images.unsplash.com/photo-1595152772835-219674b2a8a6?w=600&h=450&fit=crop&q=80",
   },
   {
     slug: "taper-classic",
@@ -34,7 +34,7 @@ const STYLES = [
     category: "taper",
     description: "Tapered sides, neat top — sharp and timeless.",
     prompt: "classic taper haircut, neatly tapered sides and back, side-parted polished top, professional barbershop",
-    thumbnailUrl: "https://images.unsplash.com/photo-1620331311520-246422fd82f9?w=600&h=450&fit=crop&q=80",
+    thumbnailUrl: "https://images.unsplash.com/photo-1503951914875-452162b0f3f1?w=600&h=450&fit=crop&q=80",
   },
   {
     slug: "buzz-2",
@@ -42,7 +42,7 @@ const STYLES = [
     category: "classic",
     description: "Clean #2 all over. Low-maintenance, unmissable jawline.",
     prompt: "buzz cut with a number 2 guard all over, uniform short length, sharp hairline",
-    thumbnailUrl: "https://images.unsplash.com/photo-1611080626919-7cf5a9dbab5b?w=600&h=450&fit=crop&q=80",
+    thumbnailUrl: "https://images.unsplash.com/photo-1622286342621-4bd786c2447c?w=600&h=450&fit=crop&q=80",
   },
   {
     slug: "edge-up-design",
@@ -50,7 +50,7 @@ const STYLES = [
     category: "design",
     description: "Razor-sharp edge-up with a custom hairline detail.",
     prompt: "low fade haircut with a razor-sharp edge-up and a single clean line design carved into the side, hairline detail",
-    thumbnailUrl: "https://images.unsplash.com/photo-1622287162716-f311baa1a2b8?w=600&h=450&fit=crop&q=80",
+    thumbnailUrl: "https://images.unsplash.com/photo-1599351431202-1e0f0137899a?w=600&h=450&fit=crop&q=80",
   },
 ];
 
