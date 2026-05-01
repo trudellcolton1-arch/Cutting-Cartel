@@ -32,6 +32,8 @@ export type CutlineGenInput = {
   length: number;
   /** 0..5 — none to skin */
   fade: number;
+  /** optional free-form description from the user — fully replaces the auto prompt when set */
+  customPrompt?: string;
 };
 
 /** Builds a tight, FLUX-friendly prompt from the cut + sliders. */
@@ -83,16 +85,26 @@ export async function generateCutPreview(input: CutlineGenInput): Promise<string
     throw new Error("REPLICATE_API_TOKEN not set");
   }
 
-  const prompt = buildPrompt(input);
+  // If the user provided a custom prompt, use it verbatim with a quality
+  // suffix. Otherwise build from style + sliders.
+  const prompt = input.customPrompt?.trim()
+    ? `${input.customPrompt.trim()}, professional barbershop portrait photograph, studio lighting, sharp focus on face, photo-realistic`
+    : buildPrompt(input);
   const model = (process.env.REPLICATE_MODEL_VERSION ?? DEFAULT_MODEL) as `${string}/${string}:${string}`;
 
   const params = {
     prompt,
     main_face_image: input.selfieUrl,
     negative_prompt: NEGATIVE_PROMPT,
-    num_steps: 20,
+    num_steps: 22,
     guidance_scale: 4,
-    id_weight: 1.05,
+    // Higher id_weight = stronger face preservation. 1.05 was producing
+    // "looks like a different person" results; 1.5 reliably keeps the
+    // customer's actual face on the new haircut.
+    id_weight: 1.5,
+    // start_step controls when face conditioning kicks in. 0 = from the
+    // first denoising step, which preserves identity hardest.
+    start_step: 0,
     width: 768,
     height: 1024,
     num_outputs: 1,

@@ -13,6 +13,7 @@ const schema = z.object({
   hairstyleId: z.string().min(1),
   length: z.number().int().min(1).max(5).default(3),
   fade: z.number().int().min(0).max(5).default(2),
+  customPrompt: z.string().max(500).optional(),
 });
 
 export async function POST(req: Request) {
@@ -34,7 +35,7 @@ export async function POST(req: Request) {
   if (!parsed.success) {
     return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
   }
-  const { selfieUrl, hairstyleId, length, fade } = parsed.data;
+  const { selfieUrl, hairstyleId, length, fade, customPrompt } = parsed.data;
 
   const style = await prisma.hairstyle.findUnique({
     where: { id: hairstyleId },
@@ -50,6 +51,7 @@ export async function POST(req: Request) {
       styleFragment: style.prompt,
       length,
       fade,
+      customPrompt,
     });
     return NextResponse.json({ previewUrl, styleName: style.name });
   } catch (err) {

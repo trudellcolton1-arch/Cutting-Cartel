@@ -1,8 +1,17 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Camera, Upload, Lock, RefreshCw, Sliders, Sparkles, Wand2 } from "lucide-react";
+import {
+  Camera,
+  Upload,
+  Lock,
+  RefreshCw,
+  Sliders,
+  Sparkles,
+  Wand2,
+  Scissors,
+} from "lucide-react";
 import type { Hairstyle } from "@prisma/client";
 import { CameraCapture } from "@/components/CameraCapture";
 import { uploadSelfie } from "@/lib/imageUpload";
@@ -24,9 +33,10 @@ export function TryOnStudio({
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [length, setLength] = useState(3);
   const [fade, setFade] = useState(2);
+  const [customPrompt, setCustomPrompt] = useState("");
   const [notes, setNotes] = useState("");
   const [genState, setGenState] = useState<GenState>("idle");
-  const [status, setStatus] = useState("Upload a selfie to start.");
+  const [status, setStatus] = useState("Add a selfie to start.");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [cameraOpen, setCameraOpen] = useState(false);
@@ -37,15 +47,19 @@ export function TryOnStudio({
   const genTokenRef = useRef(0);
 
   const selected = styles.find((s) => s.id === selectedId);
+  const isWorking = genState === "uploading" || genState === "generating";
+  const canGenerate = !!selfieRemoteUrl && !!selected && !isWorking;
+  const canLock = !!previewUrl && genState === "done" && !busy;
 
-  // Resize + direct-upload the selfie to Cloudinary in the browser.
-  // Reports 0..1 progress; falls back to /api/upload if direct isn't configured.
   const handleSelfieUpload = useCallback(async (file: File): Promise<string | null> => {
     setGenState("uploading");
     setStatus("Uploading selfie…");
     setUploadProgress(0);
+    setError(null);
     try {
       const url = await uploadSelfie(file, (p) => setUploadProgress(p));
+      setGenState("idle");
+      setStatus("Pick a style and tap Cut my hair.");
       return url;
     } catch (e) {
       console.error(e);
@@ -55,60 +69,16 @@ export function TryOnStudio({
     }
   }, []);
 
-  // Kick off a Replicate generation. Token-protected so a slow response from
-  // a previous style doesn't clobber the latest one.
-  const generate = useCallback(
-    async (selfie: string, hairstyleId: string, len: number, fd: number) => {
-      const token = ++genTokenRef.current;
-      setGenState("generating");
-      setError(null);
-      setStatus("Cutline AI is cutting your hair… (12–25s)");
-      try {
-        const res = await fetch("/api/cutline-ai/generate", {
-          method: "POST",
-          headers: { "content-type": "application/json" },
-          body: JSON.stringify({ selfieUrl: selfie, hairstyleId, length: len, fade: fd }),
-        });
-        if (token !== genTokenRef.current) return; // stale
-        if (!res.ok) {
-          const j = await res.json().catch(() => ({}));
-          throw new Error(j.error ?? "Generation failed");
-        }
-        const { previewUrl } = await res.json();
-        if (token !== genTokenRef.current) return;
-        setPreviewUrl(previewUrl);
-        setGenState("done");
-        setStatus("Looking good. Tweak it or lock it in.");
-      } catch (e) {
-        if (token !== genTokenRef.current) return;
-        const msg = e instanceof Error ? e.message : "Generation failed";
-        setError(msg);
-        setGenState("error");
-        setStatus("Generation failed.");
-      }
-    },
-    []
-  );
-
-  // When user picks a new selfie:
-  //   1. Show local preview INSTANTLY via object URL (no FileReader/base64 wait)
-  //   2. Resize + direct-upload to Cloudinary in parallel (1-3s)
-  //   3. As soon as the URL comes back, kick off Replicate generation
   const onFile = async (file: File) => {
     if (!file.type.startsWith("image/")) {
       setError("That doesn't look like an image.");
       return;
     }
-    // instant local preview
     const objectUrl = URL.createObjectURL(file);
     setSelfieDataUrl(objectUrl);
     setPreviewUrl(null);
-    setError(null);
-
     const remote = await handleSelfieUpload(file);
-    if (!remote) return;
-    setSelfieRemoteUrl(remote);
-    if (selected) generate(remote, selected.id, length, fade);
+    if (remote) setSelfieRemoteUrl(remote);
   };
 
   const openCamera = () => {
@@ -121,29 +91,54 @@ export function TryOnStudio({
     onFile(file);
   };
 
-  // Re-generate when style/length/fade change. Debounced — and we wait until
-  // any in-flight generation finishes before kicking off a new one so we don't
-  // stack requests against Replicate's rate limit.
-  useEffect(() => {
-    if (!selfieRemoteUrl || !selected) return;
-    if (genState === "generating" || genState === "uploading") return;
-    const handle = setTimeout(() => {
-      generate(selfieRemoteUrl, selected.id, length, fade);
-    }, 500);
-    return () => clearTimeout(handle);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedId, length, fade, selfieRemoteUrl, genState]);
-
-  const lockInCut = async () => {
-    if (!selfieRemoteUrl || !previewUrl || !selected) {
-      setError("Wait for the AI cut to finish first.");
+  // Manual generation — only fires when the user explicitly taps "Cut my hair".
+  // No more auto-firing on slider/style change (saves credits + prevents loops).
+  const generate = async () => {
+    if (!selfieRemoteUrl || !selected) {
+      setError("Add a selfie and pick a style first.");
       return;
     }
+    const token = ++genTokenRef.current;
+    setGenState("generating");
+    setError(null);
+    setStatus("Cutline AI is cutting… (15-25s)");
+    try {
+      const res = await fetch("/api/cutline-ai/generate", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          selfieUrl: selfieRemoteUrl,
+          hairstyleId: selected.id,
+          length,
+          fade,
+          customPrompt: customPrompt.trim() || undefined,
+        }),
+      });
+      if (token !== genTokenRef.current) return;
+      if (!res.ok) {
+        const j = await res.json().catch(() => ({}));
+        throw new Error(j.error ?? "Generation failed");
+      }
+      const { previewUrl: url } = await res.json();
+      if (token !== genTokenRef.current) return;
+      setPreviewUrl(url);
+      setGenState("done");
+      setStatus("Looking good. Lock it in or tweak and re-cut.");
+    } catch (e) {
+      if (token !== genTokenRef.current) return;
+      const msg = e instanceof Error ? e.message : "Generation failed";
+      setError(msg);
+      setGenState("error");
+      setStatus("Generation failed.");
+    }
+  };
+
+  const lockInCut = async () => {
+    if (!selfieRemoteUrl || !previewUrl || !selected) return;
     setBusy(true);
     setError(null);
     setStatus("Saving your cut…");
     try {
-      // Re-upload the Replicate output to Cloudinary for permanent storage
       const previewRes = await fetch("/api/upload", {
         method: "POST",
         headers: { "content-type": "application/json" },
@@ -161,7 +156,7 @@ export function TryOnStudio({
           previewUrl: previewJson.url,
           length,
           fade,
-          notes,
+          notes: [customPrompt && `Cut: ${customPrompt}`, notes].filter(Boolean).join("\n\n"),
         }),
       });
       if (!sessRes.ok) throw new Error("Could not save try-on");
@@ -178,13 +173,13 @@ export function TryOnStudio({
     setSelfieDataUrl(null);
     setSelfieRemoteUrl(null);
     setPreviewUrl(null);
+    setCustomPrompt("");
     setGenState("idle");
     setError(null);
-    setStatus("Upload a selfie to start.");
+    setStatus("Add a selfie to start.");
     genTokenRef.current++;
   };
 
-  const showSpinner = genState === "uploading" || genState === "generating";
   const displayImage = previewUrl ?? selfieDataUrl;
 
   return (
@@ -193,12 +188,12 @@ export function TryOnStudio({
       <div className="card">
         <div className="relative aspect-[3/4] w-full overflow-hidden rounded-xl bg-ink-700">
           {!displayImage ? (
-            <div className="absolute inset-0 grid place-items-center text-center text-sm text-bone-200/60">
-              <div className="px-6">
+            <div className="absolute inset-0 grid place-items-center px-6 text-center text-sm text-bone-200/60">
+              <div>
                 <Sparkles className="mx-auto mb-2 h-8 w-8 text-cartel-300" />
                 <div className="font-display text-base text-bone-50">Cutline AI</div>
                 <div className="mt-1 text-xs text-bone-200/60">
-                  Upload or shoot a selfie. We&apos;ll cut your hair with AI.
+                  Upload or shoot a selfie. Pick a style. Tap <span className="font-semibold text-cartel-300">Cut my hair</span>.
                 </div>
               </div>
             </div>
@@ -209,9 +204,9 @@ export function TryOnStudio({
                 src={displayImage}
                 alt="preview"
                 className="absolute inset-0 h-full w-full object-cover transition-opacity duration-300"
-                style={{ opacity: showSpinner ? 0.45 : 1 }}
+                style={{ opacity: isWorking ? 0.45 : 1 }}
               />
-              {showSpinner && (
+              {isWorking && (
                 <div className="absolute inset-0 grid place-items-center">
                   <div className="rounded-2xl bg-ink-900/80 px-5 py-4 backdrop-blur">
                     <div className="flex items-center gap-3 text-sm">
@@ -251,11 +246,8 @@ export function TryOnStudio({
           <button onClick={openCamera} className="btn-ghost">
             <Camera className="h-4 w-4" /> Use camera
           </button>
-          {selfieRemoteUrl && selected && genState !== "generating" && (
-            <button
-              onClick={() => generate(selfieRemoteUrl, selected.id, length, fade)}
-              className="btn-ghost"
-            >
+          {previewUrl && !isWorking && (
+            <button onClick={generate} className="btn-ghost">
               <RefreshCw className="h-4 w-4" /> Re-roll
             </button>
           )}
@@ -277,7 +269,7 @@ export function TryOnStudio({
         {error && <p className="mt-1 text-xs text-red-400">{error}</p>}
       </div>
 
-      {/* Sidebar */}
+      {/* Controls */}
       <div className="space-y-4">
         <div className="card">
           <div className="flex items-center justify-between">
@@ -335,31 +327,60 @@ export function TryOnStudio({
                 className="w-full accent-cartel-500"
               />
             </div>
-            <div>
-              <label className="label">Notes for your barber</label>
-              <textarea
-                value={notes}
-                onChange={(e) => setNotes(e.target.value)}
-                rows={3}
-                className="input resize-none"
-                placeholder="Mid fade, leave length on top, keep beard tight…"
-              />
-            </div>
           </div>
         </div>
 
+        <div className="card">
+          <label className="label">
+            <Wand2 className="mr-1 inline h-3.5 w-3.5 text-cartel-300" />
+            Describe your dream cut <span className="text-bone-200/40">(optional)</span>
+          </label>
+          <textarea
+            value={customPrompt}
+            onChange={(e) => setCustomPrompt(e.target.value)}
+            rows={3}
+            maxLength={500}
+            className="input resize-none"
+            placeholder="e.g. mid fade with a textured pomp, a single line on the left side, beard kept tight…"
+          />
+          <p className="mt-1 text-right text-[10px] text-bone-200/40">{customPrompt.length}/500</p>
+        </div>
+
+        <div className="card">
+          <label className="label">Notes for your barber</label>
+          <textarea
+            value={notes}
+            onChange={(e) => setNotes(e.target.value)}
+            rows={3}
+            className="input resize-none"
+            placeholder="Allergies, scalp sensitivity, anything Brian should know."
+          />
+        </div>
+
+        {/* Primary action — explicit Cut my hair */}
         <button
-          disabled={busy || genState !== "done" || !previewUrl}
-          onClick={lockInCut}
-          className="btn-primary w-full justify-center"
+          disabled={!canGenerate}
+          onClick={generate}
+          className="btn-primary w-full justify-center text-base"
         >
-          <Lock className="h-4 w-4" />
-          {busy ? "Locking in…" : "Lock This Cut"}
+          <Scissors className="h-4 w-4" />
+          {genState === "generating" ? "Cutting…" : previewUrl ? "Cut again" : "Cut my hair"}
         </button>
-        {!previewUrl && (
-          <p className="text-center text-xs text-bone-200/50">
-            Cutline AI needs to finish the cut first
-          </p>
+
+        {/* Lock-in only after a successful generation */}
+        {canLock && (
+          <button
+            disabled={busy}
+            onClick={lockInCut}
+            className="btn-ghost w-full justify-center border-cartel-500 text-cartel-300 hover:bg-cartel-500/10"
+          >
+            <Lock className="h-4 w-4" />
+            {busy ? "Locking in…" : "Lock this cut & book"}
+          </button>
+        )}
+
+        {!selfieRemoteUrl && (
+          <p className="text-center text-xs text-bone-200/50">Upload a selfie to unlock</p>
         )}
       </div>
 
