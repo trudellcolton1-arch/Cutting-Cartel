@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Camera, Upload, Lock, RefreshCw, Sliders, Sparkles, Wand2 } from "lucide-react";
 import type { Hairstyle } from "@prisma/client";
+import { CameraCapture } from "@/components/CameraCapture";
 
 type GenState = "idle" | "uploading" | "generating" | "done" | "error";
 
@@ -27,9 +28,9 @@ export function TryOnStudio({
   const [status, setStatus] = useState("Upload a selfie to start.");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [cameraOpen, setCameraOpen] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const videoRef = useRef<HTMLVideoElement>(null);
   // increment to abort stale generation responses
   const genTokenRef = useRef(0);
 
@@ -110,31 +111,14 @@ export function TryOnStudio({
     reader.readAsDataURL(file);
   };
 
-  // Webcam capture — same flow as upload.
-  const captureFromCamera = async () => {
-    try {
-      setStatus("Opening camera…");
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: "user", width: { ideal: 768 }, height: { ideal: 1024 } },
-        audio: false,
-      });
-      const video = videoRef.current;
-      if (!video) return;
-      video.srcObject = stream;
-      await video.play();
-      await new Promise((r) => setTimeout(r, 600));
-      const c = document.createElement("canvas");
-      c.width = video.videoWidth;
-      c.height = video.videoHeight;
-      c.getContext("2d")!.drawImage(video, 0, 0);
-      stream.getTracks().forEach((t) => t.stop());
-      const dataUrl = c.toDataURL("image/jpeg", 0.92);
-      const blob = await (await fetch(dataUrl)).blob();
-      onFile(new File([blob], "selfie.jpg", { type: "image/jpeg" }));
-    } catch (e) {
-      console.warn(e);
-      setError("Camera access denied. Upload a photo instead.");
-    }
+  const openCamera = () => {
+    setError(null);
+    setCameraOpen(true);
+  };
+
+  const handleCameraCapture = (file: File) => {
+    setCameraOpen(false);
+    onFile(file);
   };
 
   // Re-generate when style/length/fade change (debounced — we don't want to
@@ -248,7 +232,6 @@ export function TryOnStudio({
               )}
             </>
           )}
-          <video ref={videoRef} className="hidden" playsInline />
         </div>
 
         <style>{`@keyframes loader { 0%{transform:translateX(-100%);} 50%{transform:translateX(50%);} 100%{transform:translateX(200%);} }`}</style>
@@ -257,7 +240,7 @@ export function TryOnStudio({
           <button onClick={() => fileInputRef.current?.click()} className="btn-ghost">
             <Upload className="h-4 w-4" /> Upload
           </button>
-          <button onClick={captureFromCamera} className="btn-ghost">
+          <button onClick={openCamera} className="btn-ghost">
             <Camera className="h-4 w-4" /> Use camera
           </button>
           {selfieRemoteUrl && selected && genState !== "generating" && (
@@ -371,6 +354,10 @@ export function TryOnStudio({
           </p>
         )}
       </div>
+
+      {cameraOpen && (
+        <CameraCapture onCapture={handleCameraCapture} onClose={() => setCameraOpen(false)} />
+      )}
     </div>
   );
 }
