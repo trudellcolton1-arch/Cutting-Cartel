@@ -96,7 +96,7 @@ export async function generateCutPreview(input: CutlineGenInput): Promise<string
     prompt,
     main_face_image: input.selfieUrl,
     negative_prompt: NEGATIVE_PROMPT,
-    num_steps: 22,
+    num_steps: 20,
     guidance_scale: 4,
     // Higher id_weight = stronger face preservation. 1.05 was producing
     // "looks like a different person" results; 1.5 reliably keeps the
