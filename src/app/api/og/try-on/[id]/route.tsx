@@ -135,16 +135,7 @@ export async function GET(_req: Request, { params }: { params: { id: string } })
                 <Pill>cuttingcartel.com</Pill>
               </div>
             </div>
-            <div
-              style={{
-                width: 220,
-                height: 8,
-                borderRadius: 4,
-                background:
-                  "repeating-linear-gradient(45deg, #d99a2b 0 8px, #0a0a0b 8px 16px, #fafaf7 16px 24px, #0a0a0b 24px 32px)",
-                display: "flex",
-              }}
-            />
+            <Stripe />
           </div>
         </div>
       </div>
@@ -153,9 +144,37 @@ export async function GET(_req: Request, { params }: { params: { id: string } })
       width: W,
       height: H,
       headers: {
+        "content-type": "image/png",
         "cache-control": "public, max-age=600, s-maxage=86400, stale-while-revalidate=86400",
       },
     }
+  );
+}
+
+const STRIPE_COLORS = ["#d99a2b", "#0a0a0b", "#fafaf7", "#0a0a0b"];
+
+function Stripe() {
+  return (
+    <div
+      style={{
+        display: "flex",
+        width: 220,
+        height: 8,
+        borderRadius: 4,
+        overflow: "hidden",
+      }}
+    >
+      {Array.from({ length: 16 }).map((_, i) => (
+        <div
+          key={i}
+          style={{
+            flex: 1,
+            background: STRIPE_COLORS[i % STRIPE_COLORS.length],
+            display: "flex",
+          }}
+        />
+      ))}
+    </div>
   );
 }
 

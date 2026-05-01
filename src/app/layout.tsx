@@ -4,7 +4,9 @@ import { Providers } from "./providers";
 import { SiteHeader } from "@/components/SiteHeader";
 import { SiteFooter } from "@/components/SiteFooter";
 
-const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? "https://cuttingcartel.com";
+const APP_URL =
+  process.env.NEXT_PUBLIC_APP_URL ??
+  (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "https://cuttingcartel.com");
 const OG_IMAGE = `${APP_URL}/api/og`;
 
 export const metadata: Metadata = {
@@ -40,13 +42,6 @@ export const metadata: Metadata = {
       "Dallas barbershop. Book your chair, prepay, try on your cut with Cutline AI.",
     creator: "@cuttingcartel",
     images: [OG_IMAGE],
-  },
-  other: {
-    // explicit fallbacks some scrapers (iMessage especially) prefer
-    "og:image": OG_IMAGE,
-    "og:image:width": "1200",
-    "og:image:height": "630",
-    "og:image:type": "image/png",
   },
 };
 
