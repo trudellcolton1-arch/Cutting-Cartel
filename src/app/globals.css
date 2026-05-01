@@ -1,0 +1,51 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: dark;
+}
+
+html,
+body {
+  background: #0a0a0b;
+  color: #fafaf7;
+  -webkit-font-smoothing: antialiased;
+}
+
+::selection {
+  background: #d99a2b;
+  color: #0a0a0b;
+}
+
+@layer components {
+  .btn-primary {
+    @apply inline-flex items-center justify-center gap-2 rounded-full bg-cartel-500 px-5 py-3 text-sm font-semibold text-ink-900 transition hover:bg-cartel-300 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50;
+  }
+  .btn-ghost {
+    @apply inline-flex items-center justify-center gap-2 rounded-full border border-ink-600 bg-transparent px-5 py-3 text-sm font-semibold text-bone-50 transition hover:border-cartel-500 hover:text-cartel-300;
+  }
+  .card {
+    @apply rounded-2xl border border-ink-700 bg-ink-800/70 p-6 backdrop-blur;
+  }
+  .input {
+    @apply w-full rounded-xl border border-ink-600 bg-ink-700/60 px-4 py-3 text-bone-50 placeholder-ink-500 focus:border-cartel-500 focus:outline-none focus:ring-2 focus:ring-cartel-500/40;
+  }
+  .label {
+    @apply mb-1.5 block text-xs font-semibold uppercase tracking-wider text-bone-200/70;
+  }
+  .pill {
+    @apply inline-flex items-center gap-1 rounded-full border border-ink-600 px-3 py-1 text-xs font-medium text-bone-100;
+  }
+}
+
+/* subtle barbershop stripe accent */
+.stripe-accent {
+  background-image: repeating-linear-gradient(
+    45deg,
+    #d99a2b 0 8px,
+    #0a0a0b 8px 16px,
+    #fafaf7 16px 24px,
+    #0a0a0b 24px 32px
+  );
+}
