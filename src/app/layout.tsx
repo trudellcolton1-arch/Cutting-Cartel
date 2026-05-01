@@ -5,19 +5,53 @@ import { Providers } from "./providers";
 import { SiteHeader } from "@/components/SiteHeader";
 import { SiteFooter } from "@/components/SiteFooter";
 
+// Normalize a possibly-malformed URL string. Trims whitespace, collapses
+// duplicated "https://" prefixes (a common copy-paste typo), and falls back
+// to the production domain if parsing still fails. This keeps build-time
+// prerender from crashing on a typo'd env var.
+function normalizeUrl(raw: string | undefined | null, fallback: string): string {
+  if (!raw) return fallback;
+  let s = raw.trim();
+  // collapse "https://https://...", "https:// https://...", "http:// https://..."
+  s = s.replace(/^(https?:\/\/\s*)+(https?:\/\/)/i, "$2");
+  // strip leading whitespace inside the URL
+  s = s.replace(/^\s+/, "");
+  // if it doesn't start with http(s)://, prepend https://
+  if (!/^https?:\/\//i.test(s)) s = `https://${s}`;
+  // strip any internal whitespace
+  s = s.replace(/\s+/g, "");
+  try {
+    // validate
+    new URL(s);
+    return s;
+  } catch {
+    return fallback;
+  }
+}
+
+const FALLBACK_URL = "https://cuttingcartel.com";
+
 // Resolve the absolute URL the scraper / browser is actually using so the
 // og:image href points to the same host the page was loaded from. Falls back
-// to NEXT_PUBLIC_APP_URL or the production domain if headers aren't available.
+// to NEXT_PUBLIC_APP_URL or the production domain.
 function getAppUrl() {
   try {
     const h = headers();
     const host = h.get("x-forwarded-host") ?? h.get("host");
     const proto = h.get("x-forwarded-proto") ?? "https";
-    if (host) return `${proto}://${host}`;
+    if (host) {
+      const candidate = `${proto}://${host}`.trim();
+      try {
+        new URL(candidate);
+        return candidate;
+      } catch {
+        /* fall through */
+      }
+    }
   } catch {
-    /* headers() not available in some contexts */
+    /* headers() not available during static prerender */
   }
-  return process.env.NEXT_PUBLIC_APP_URL ?? "https://cuttingcartel.com";
+  return normalizeUrl(process.env.NEXT_PUBLIC_APP_URL, FALLBACK_URL);
 }
 
 export async function generateMetadata(): Promise<Metadata> {
