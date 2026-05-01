@@ -1,0 +1,8 @@
+[{
+  "relation": ["delegate_permission/common.handle_all_urls"],
+  "target": {
+    "namespace": "android_app",
+    "package_name": "com.cuttingcartel.twa",
+    "sha256_cert_fingerprints": ["C9:94:B7:59:23:24:A5:BF:64:EB:15:8C:23:9F:BA:90:E4:5A:7A:2B:6F:ED:96:11:28:FD:76:EF:85:44:EC:83"]
+  }
+}]
