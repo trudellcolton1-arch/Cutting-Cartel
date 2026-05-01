@@ -82,8 +82,10 @@ model Barber {
   shopName    String   @default("The Cutting Cartel")
   city        String   @default("Dallas, TX")
   avatarUrl   String?
-  // base price in cents (USD) — appointments override per hairstyle if set
-  basePriceCents Int   @default(4500)
+  // base price retained for back-compat; new bookings use the per-cut prices below
+  basePriceCents Int   @default(5000)
+  priceAdultCents Int  @default(5000)  // $50 default
+  priceKidCents   Int  @default(2000)  // $20 default
   // 30-min slots, expressed as a JSON map of weekday -> [start, end] in 24h "HH:mm"
   workingHours   Json  @default("{\"mon\":[\"10:00\",\"19:00\"],\"tue\":[\"10:00\",\"19:00\"],\"wed\":[\"10:00\",\"19:00\"],\"thu\":[\"10:00\",\"19:00\"],\"fri\":[\"10:00\",\"20:00\"],\"sat\":[\"09:00\",\"18:00\"],\"sun\":null}")
   slotMinutes    Int   @default(45)
@@ -152,6 +154,8 @@ model Appointment {
   status          AppointmentStatus @default(PENDING_PAYMENT)
   notes           String?
   priceCents      Int
+  cutType         String   @default("adult")    // "adult" or "kid"
+  paymentMethod   String   @default("online")   // "online" (Stripe) or "in_person"
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 

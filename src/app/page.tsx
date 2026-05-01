@@ -23,15 +23,15 @@ export default async function Home() {
     <div>
       {/* Hero */}
       <section className="relative overflow-hidden">
-        {/* Teflon Cutz mascot — faded into the hero background, fully visible */}
+        {/* Teflon Cutz mascot — faded into the hero background */}
         <div
-          className="pointer-events-none absolute inset-x-0 top-0 -z-0 h-[680px] bg-no-repeat md:h-[760px]"
+          className="pointer-events-none absolute inset-x-0 top-0 -z-0 h-[520px] bg-no-repeat sm:h-[640px] md:h-[760px]"
           style={{
             backgroundImage:
               "url('/A4D9A22C-1FA9-4603-8021-CC8F0BCBE8C1.jpeg')",
             backgroundPosition: "right 12px top 12px",
-            backgroundSize: "min(560px, 80vw) auto",
-            opacity: 0.18,
+            backgroundSize: "min(560px, 64vw) auto",
+            opacity: 0.14,
             maskImage:
               "linear-gradient(to bottom, rgba(0,0,0,1) 0%, rgba(0,0,0,0.85) 55%, rgba(0,0,0,0) 100%)",
             WebkitMaskImage:
@@ -40,17 +40,17 @@ export default async function Home() {
           aria-hidden
         />
         <div className="pointer-events-none absolute inset-0 bg-grid-fade" aria-hidden />
-        <div className="relative mx-auto max-w-6xl px-4 pt-16 pb-20 md:pt-24 md:pb-28">
-          <div className="flex flex-col items-start gap-6">
+        <div className="relative mx-auto max-w-6xl px-4 pt-12 pb-16 sm:pt-16 sm:pb-20 md:pt-24 md:pb-28">
+          <div className="flex flex-col items-start gap-5 sm:gap-6">
             <span className="pill border-cartel-500/40 bg-cartel-500/10 text-cartel-300">
               <Sparkles className="h-3.5 w-3.5" /> Dallas · Texas
             </span>
-            <h1 className="font-display text-5xl leading-[0.95] tracking-tight md:text-8xl">
+            <h1 className="font-display text-[2.75rem] leading-[0.95] tracking-tight sm:text-6xl md:text-8xl">
               The Cutting
               <br />
               <span className="text-cartel-300">Cartel.</span>
             </h1>
-            <p className="max-w-xl text-base text-bone-100/80 md:text-lg">
+            <p className="max-w-xl text-sm text-bone-100/80 sm:text-base md:text-lg">
               Dallas&apos;s premier barber experience. Book your chair, prepay online, and use{" "}
               <span className="font-semibold text-cartel-300">Cutline AI</span> — our in-house
               hairstyle try-on — to lock the look before you sit down.

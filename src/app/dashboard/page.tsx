@@ -32,13 +32,15 @@ export default async function CustomerDashboard() {
   const past = appts.filter((a) => !upcoming.includes(a));
 
   return (
-    <div className="mx-auto max-w-5xl px-4 py-10">
-      <div className="flex items-center justify-between">
+    <div className="mx-auto max-w-5xl px-4 py-6 sm:py-10">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="font-display text-3xl">Welcome back{session.user.name ? `, ${session.user.name.split(" ")[0]}` : ""}</h1>
+          <h1 className="font-display text-2xl sm:text-3xl">
+            Welcome back{session.user.name ? `, ${session.user.name.split(" ")[0]}` : ""}
+          </h1>
           <p className="mt-1 text-sm text-bone-200/70">Your bookings and locked-in cuts.</p>
         </div>
-        <Link href="/try-on" className="btn-primary">
+        <Link href="/try-on" className="btn-primary self-start sm:self-auto">
           New try-on
         </Link>
       </div>

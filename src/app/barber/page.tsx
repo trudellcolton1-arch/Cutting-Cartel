@@ -55,14 +55,18 @@ export default async function BarberDashboard() {
   );
 
   return (
-    <div className="mx-auto max-w-6xl px-4 py-10">
-      <div className="flex items-center justify-between">
+    <div className="mx-auto max-w-6xl px-4 py-6 sm:py-10">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="font-display text-3xl">{barber.displayName} · Studio</h1>
-          <p className="mt-1 text-sm text-bone-200/70">{barber.shopName} · {barber.city}</p>
+          <h1 className="font-display text-2xl sm:text-3xl">{barber.displayName} · Studio</h1>
+          <p className="mt-1 text-sm text-bone-200/70">
+            {barber.shopName} · {barber.city}
+          </p>
         </div>
         <div className="flex gap-3">
-          <Link href={`/barber/profile`} className="btn-ghost">Profile</Link>
+          <Link href={`/barber/profile`} className="btn-ghost self-start sm:self-auto">
+            Profile
+          </Link>
         </div>
       </div>
 
@@ -135,7 +139,7 @@ function ApptCard({ appt }: ApptCardProps) {
       : `fade ${appt.tryOnSession?.fade ?? "—"}`;
 
   return (
-    <div className="card grid gap-4 md:grid-cols-[120px_1fr_240px]">
+    <div className="card grid gap-4 sm:grid-cols-[120px_1fr] md:grid-cols-[120px_1fr_240px]">
       <div className="grid grid-cols-2 gap-1">
         {appt.tryOnSession?.selfieUrl && (
           // eslint-disable-next-line @next/next/no-img-element
@@ -190,10 +194,12 @@ function ApptCard({ appt }: ApptCardProps) {
         )}
       </div>
 
-      <div className="text-right">
+      <div className="text-left sm:col-span-2 sm:text-right md:col-span-1">
         <div className="font-display text-2xl text-cartel-300">{formatPrice(appt.priceCents)}</div>
         <div className="text-xs text-bone-200/60">
-          {appt.payment?.status === "SUCCEEDED" ? "Prepaid" : appt.payment?.status?.replace("_", " ") ?? "—"}
+          {appt.payment?.status === "SUCCEEDED"
+            ? "Prepaid"
+            : appt.payment?.status?.replace("_", " ") ?? "Pay at chair"}
         </div>
         {appt.customer.phone && (
           <a href={`tel:${appt.customer.phone}`} className="btn-ghost mt-2 px-3 py-1 text-xs">

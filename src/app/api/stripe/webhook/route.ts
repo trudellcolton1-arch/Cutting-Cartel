@@ -85,6 +85,8 @@ export async function POST(req: Request) {
                 notes: appt.tryOnSession?.notes ?? appt.notes ?? null,
                 previewUrl: appt.tryOnSession?.previewUrl ?? null,
                 selfieUrl: appt.tryOnSession?.selfieUrl ?? null,
+                cutType: (appt.cutType as "adult" | "kid" | undefined) ?? "adult",
+                paymentMethod: (appt.paymentMethod as "online" | "in_person" | undefined) ?? "online",
                 appUrl,
               };
               await Promise.allSettled([

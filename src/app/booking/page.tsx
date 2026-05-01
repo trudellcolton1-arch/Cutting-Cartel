@@ -30,6 +30,8 @@ export default async function BookingPage({
       city: true,
       avatarUrl: true,
       basePriceCents: true,
+      priceAdultCents: true,
+      priceKidCents: true,
       slotMinutes: true,
     },
     orderBy: { displayName: "asc" },
@@ -43,10 +45,10 @@ export default async function BookingPage({
     : null;
 
   return (
-    <div className="mx-auto max-w-5xl px-4 py-10">
-      <h1 className="font-display text-3xl md:text-4xl">Book your chair</h1>
+    <div className="mx-auto max-w-5xl px-4 py-6 sm:py-10">
+      <h1 className="font-display text-2xl sm:text-3xl md:text-4xl">Book your chair</h1>
       <p className="mt-1 text-sm text-bone-200/70">
-        Pick your barber, time, and prepay. Your reference cut and notes go with the booking.
+        Pick your time, choose how to pay, and we&apos;ll send your reference cut to Brian.
       </p>
 
       <Suspense fallback={<div className="card mt-6">Loading…</div>}>

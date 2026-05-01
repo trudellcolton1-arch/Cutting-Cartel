@@ -40,6 +40,8 @@ type AppointmentEmail = {
   notes: string | null;
   previewUrl: string | null;
   selfieUrl: string | null;
+  cutType?: "adult" | "kid";
+  paymentMethod?: "online" | "in_person";
   appUrl: string;
 };
 
@@ -91,12 +93,18 @@ export async function sendBarberAppointmentEmail(a: AppointmentEmail) {
   const recipients = notificationRecipients(a.barber.userEmail);
   if (!t || recipients.length === 0) return;
 
+  const cutTypeLabel = a.cutType === "kid" ? "Kids cut" : "Adult cut";
+  const paymentLabel =
+    a.paymentMethod === "in_person"
+      ? `${formatPrice(a.priceCents)} — collect at chair`
+      : `${formatPrice(a.priceCents)} — prepaid`;
   const detailsTable = `<table width="100%" style="margin:16px 0;border-collapse:collapse;">
     ${row("Customer", a.customer.name ?? a.customer.email ?? "—")}
     ${row("Email", a.customer.email ?? "—")}
     ${row("When", format(a.startsAt, "EEE, MMM d · h:mm a"))}
+    ${row("Type", cutTypeLabel)}
     ${row("Cut", a.hairstyleName ?? "Walk-in cut")}
-    ${row("Paid", formatPrice(a.priceCents))}
+    ${row("Payment", paymentLabel)}
   </table>`;
 
   const notesBlock = a.notes
@@ -141,11 +149,17 @@ export async function sendCustomerAppointmentEmail(a: AppointmentEmail) {
   const t = getTransport();
   if (!t || !a.customer.email) return;
 
+  const cutTypeLabel = a.cutType === "kid" ? "Kids cut" : "Adult cut";
+  const paymentLabel =
+    a.paymentMethod === "in_person"
+      ? `${formatPrice(a.priceCents)} — pay at the chair`
+      : `${formatPrice(a.priceCents)} — paid online`;
   const detailsTable = `<table width="100%" style="margin:16px 0;border-collapse:collapse;">
     ${row("Barber", `${a.barber.displayName} · ${a.barber.shopName}`)}
     ${row("When", format(a.startsAt, "EEE, MMM d · h:mm a"))}
+    ${row("Type", cutTypeLabel)}
     ${row("Cut", a.hairstyleName ?? "Walk-in cut")}
-    ${row("Paid", formatPrice(a.priceCents))}
+    ${row("Payment", paymentLabel)}
   </table>`;
 
   const previewBlock = a.previewUrl

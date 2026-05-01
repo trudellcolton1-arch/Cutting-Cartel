@@ -137,6 +137,13 @@ const STATEMENTS: string[] = [
     "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
   )`,
 
+  // ===== Schema migrations on existing tables =====
+  // Add new columns idempotently for already-deployed dbs
+  `ALTER TABLE "Barber" ADD COLUMN IF NOT EXISTS "priceAdultCents" INTEGER NOT NULL DEFAULT 5000`,
+  `ALTER TABLE "Barber" ADD COLUMN IF NOT EXISTS "priceKidCents" INTEGER NOT NULL DEFAULT 2000`,
+  `ALTER TABLE "Appointment" ADD COLUMN IF NOT EXISTS "cutType" TEXT NOT NULL DEFAULT 'adult'`,
+  `ALTER TABLE "Appointment" ADD COLUMN IF NOT EXISTS "paymentMethod" TEXT NOT NULL DEFAULT 'online'`,
+
   // ===== Foreign keys =====
   `ALTER TABLE "Account" ADD CONSTRAINT "Account_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE`,
   `ALTER TABLE "Session" ADD CONSTRAINT "Session_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE`,
@@ -264,12 +271,15 @@ export async function GET(_req: Request) {
         update: { name: b.name, role: "BARBER", passwordHash },
         create: { email: b.email, name: b.name, role: "BARBER", passwordHash },
       });
+      // Set per-cut prices: $50 adults, $20 kids
       await prisma.barber.upsert({
         where: { userId: user.id },
         update: {
           displayName: b.displayName,
           bio: b.bio,
-          basePriceCents: b.basePriceCents,
+          basePriceCents: 5000,
+          priceAdultCents: 5000,
+          priceKidCents: 2000,
           slotMinutes: b.slotMinutes,
           isActive: true,
         },
@@ -277,7 +287,9 @@ export async function GET(_req: Request) {
           userId: user.id,
           displayName: b.displayName,
           bio: b.bio,
-          basePriceCents: b.basePriceCents,
+          basePriceCents: 5000,
+          priceAdultCents: 5000,
+          priceKidCents: 2000,
           slotMinutes: b.slotMinutes,
         },
       });
