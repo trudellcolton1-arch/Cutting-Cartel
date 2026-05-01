@@ -1,49 +1,65 @@
 import type { Metadata, Viewport } from "next";
+import { headers } from "next/headers";
 import "./globals.css";
 import { Providers } from "./providers";
 import { SiteHeader } from "@/components/SiteHeader";
 import { SiteFooter } from "@/components/SiteFooter";
 
-const APP_URL =
-  process.env.NEXT_PUBLIC_APP_URL ??
-  (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "https://cuttingcartel.com");
-const OG_IMAGE = `${APP_URL}/api/og`;
+// Resolve the absolute URL the scraper / browser is actually using so the
+// og:image href points to the same host the page was loaded from. Falls back
+// to NEXT_PUBLIC_APP_URL or the production domain if headers aren't available.
+function getAppUrl() {
+  try {
+    const h = headers();
+    const host = h.get("x-forwarded-host") ?? h.get("host");
+    const proto = h.get("x-forwarded-proto") ?? "https";
+    if (host) return `${proto}://${host}`;
+  } catch {
+    /* headers() not available in some contexts */
+  }
+  return process.env.NEXT_PUBLIC_APP_URL ?? "https://cuttingcartel.com";
+}
 
-export const metadata: Metadata = {
-  title: {
-    default: "The Cutting Cartel — Dallas's premier barber experience",
-    template: "%s · The Cutting Cartel",
-  },
-  description:
-    "The Cutting Cartel — Dallas, TX. Book your chair, prepay online, and use Cutline AI to try on your next cut before you sit down.",
-  metadataBase: new URL(APP_URL),
-  openGraph: {
-    title: "The Cutting Cartel",
+export async function generateMetadata(): Promise<Metadata> {
+  const APP_URL = getAppUrl();
+  const OG_IMAGE = `${APP_URL}/api/og`;
+
+  return {
+    title: {
+      default: "The Cutting Cartel — Dallas's premier barber experience",
+      template: "%s · The Cutting Cartel",
+    },
     description:
-      "Dallas barbershop. Book your chair, prepay, and use Cutline AI to try on your cut before the clippers touch your head.",
-    url: APP_URL,
-    type: "website",
-    siteName: "The Cutting Cartel",
-    images: [
-      {
-        url: OG_IMAGE,
-        secureUrl: OG_IMAGE,
-        width: 1200,
-        height: 630,
-        alt: "The Cutting Cartel — Dallas, TX",
-        type: "image/png",
-      },
-    ],
-  },
-  twitter: {
-    card: "summary_large_image",
-    title: "The Cutting Cartel",
-    description:
-      "Dallas barbershop. Book your chair, prepay, try on your cut with Cutline AI.",
-    creator: "@cuttingcartel",
-    images: [OG_IMAGE],
-  },
-};
+      "The Cutting Cartel — Dallas, TX. Book your chair, prepay online, and use Cutline AI to try on your next cut before you sit down.",
+    metadataBase: new URL(APP_URL),
+    openGraph: {
+      title: "The Cutting Cartel",
+      description:
+        "Dallas barbershop. Book your chair, prepay, and use Cutline AI to try on your cut before the clippers touch your head.",
+      url: APP_URL,
+      type: "website",
+      siteName: "The Cutting Cartel",
+      images: [
+        {
+          url: OG_IMAGE,
+          secureUrl: OG_IMAGE,
+          width: 1200,
+          height: 630,
+          alt: "The Cutting Cartel — Dallas, TX",
+          type: "image/png",
+        },
+      ],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: "The Cutting Cartel",
+      description:
+        "Dallas barbershop. Book your chair, prepay, try on your cut with Cutline AI.",
+      creator: "@cuttingcartel",
+      images: [OG_IMAGE],
+    },
+  };
+}
 
 export const viewport: Viewport = {
   themeColor: "#0a0a0b",
