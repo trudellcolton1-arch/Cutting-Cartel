@@ -143,6 +143,7 @@ const STATEMENTS: string[] = [
   `ALTER TABLE "Barber" ADD COLUMN IF NOT EXISTS "priceKidCents" INTEGER NOT NULL DEFAULT 2000`,
   `ALTER TABLE "Appointment" ADD COLUMN IF NOT EXISTS "cutType" TEXT NOT NULL DEFAULT 'adult'`,
   `ALTER TABLE "Appointment" ADD COLUMN IF NOT EXISTS "paymentMethod" TEXT NOT NULL DEFAULT 'online'`,
+  `ALTER TABLE "Barber" ADD COLUMN IF NOT EXISTS "availableFrom" TIMESTAMP(3)`,
 
   // ===== Foreign keys =====
   `ALTER TABLE "Account" ADD CONSTRAINT "Account_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE`,
@@ -272,6 +273,9 @@ export async function GET(_req: Request) {
         create: { email: b.email, name: b.name, role: "BARBER", passwordHash },
       });
       // Set per-cut prices: $50 adults, $20 kids
+      // Brian is fully booked through May 8, 2026 — first open slot is May 9.
+      // Stored as UTC: midnight CT on May 9 = 05:00 UTC.
+      const availableFrom = new Date("2026-05-09T05:00:00.000Z");
       await prisma.barber.upsert({
         where: { userId: user.id },
         update: {
@@ -282,6 +286,7 @@ export async function GET(_req: Request) {
           priceKidCents: 2000,
           slotMinutes: b.slotMinutes,
           isActive: true,
+          availableFrom,
         },
         create: {
           userId: user.id,
@@ -291,6 +296,7 @@ export async function GET(_req: Request) {
           priceAdultCents: 5000,
           priceKidCents: 2000,
           slotMinutes: b.slotMinutes,
+          availableFrom,
         },
       });
     }

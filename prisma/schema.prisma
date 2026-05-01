@@ -90,6 +90,8 @@ model Barber {
   workingHours   Json  @default("{\"mon\":[\"10:00\",\"19:00\"],\"tue\":[\"10:00\",\"19:00\"],\"wed\":[\"10:00\",\"19:00\"],\"thu\":[\"10:00\",\"19:00\"],\"fri\":[\"10:00\",\"20:00\"],\"sat\":[\"09:00\",\"18:00\"],\"sun\":null}")
   slotMinutes    Int   @default(45)
   isActive       Boolean @default(true)
+  // when set, no slots show before this date (vacation / time-off blocking)
+  availableFrom  DateTime?
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 

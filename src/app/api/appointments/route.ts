@@ -55,6 +55,12 @@ export async function POST(req: Request) {
   if (Number.isNaN(start.getTime()) || start < new Date()) {
     return NextResponse.json({ error: "Invalid start time" }, { status: 400 });
   }
+  if (barber.availableFrom && start < barber.availableFrom) {
+    return NextResponse.json(
+      { error: "Brian's chair is fully booked until that date." },
+      { status: 409 }
+    );
+  }
   const end = addMinutes(start, barber.slotMinutes);
 
   const conflict = await prisma.appointment.findFirst({
