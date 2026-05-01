@@ -4,6 +4,8 @@ import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { filterAvailableSlots, generateSlots } from "@/lib/booking";
 
+export const dynamic = "force-dynamic";
+
 const querySchema = z.object({
   barberId: z.string().min(1),
   date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),

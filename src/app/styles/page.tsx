@@ -2,13 +2,15 @@ import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 
-export const revalidate = 60;
+export const dynamic = "force-dynamic";
 
 export default async function StylesPage() {
-  const styles = await prisma.hairstyle.findMany({
-    where: { isActive: true },
-    orderBy: [{ category: "asc" }, { name: "asc" }],
-  });
+  const styles = await prisma.hairstyle
+    .findMany({
+      where: { isActive: true },
+      orderBy: [{ category: "asc" }, { name: "asc" }],
+    })
+    .catch(() => [] as Awaited<ReturnType<typeof prisma.hairstyle.findMany>>);
 
   const groups = styles.reduce<Record<string, typeof styles>>((acc, s) => {
     (acc[s.category] = acc[s.category] ?? []).push(s);

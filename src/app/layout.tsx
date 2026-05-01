@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { Providers } from "./providers";
 import { SiteHeader } from "@/components/SiteHeader";
@@ -21,6 +21,9 @@ export const metadata: Metadata = {
     description: "Try on your next cut with AI. Book your barber. Pay up front.",
     creator: "@cuttingcartel",
   },
+};
+
+export const viewport: Viewport = {
   themeColor: "#0a0a0b",
 };
 
