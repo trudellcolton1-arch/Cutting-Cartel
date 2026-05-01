@@ -1,9 +1,11 @@
 import Link from "next/link";
 import { format } from "date-fns";
+import { formatInTimeZone } from "date-fns-tz";
 import { redirect } from "next/navigation";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { SHOP_TZ } from "@/lib/booking";
 import { formatPrice } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
@@ -45,8 +47,10 @@ export default async function BarberDashboard() {
     orderBy: { startsAt: "asc" },
   });
 
+  // Compare days in the SHOP timezone, not the server's UTC.
+  const today = formatInTimeZone(now, SHOP_TZ, "yyyy-MM-dd");
   const todays = upcoming.filter(
-    (a) => format(a.startsAt, "yyyy-MM-dd") === format(now, "yyyy-MM-dd")
+    (a) => formatInTimeZone(a.startsAt, SHOP_TZ, "yyyy-MM-dd") === today
   );
 
   const todaysRevenue = todays.reduce(
@@ -159,7 +163,7 @@ function ApptCard({ appt }: ApptCardProps) {
       <div className="min-w-0">
         <div className="flex items-center gap-2">
           <span className="font-display text-lg">
-            {format(appt.startsAt, "h:mm a")} – {format(appt.endsAt, "h:mm a")}
+            {formatInTimeZone(appt.startsAt, SHOP_TZ, "h:mm a")} – {formatInTimeZone(appt.endsAt, SHOP_TZ, "h:mm a")}
           </span>
           <span
             className={`pill ${

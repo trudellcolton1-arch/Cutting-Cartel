@@ -1,6 +1,12 @@
 import nodemailer from "nodemailer";
-import { format } from "date-fns";
+import { formatShopDateTime } from "@/lib/booking";
 import { formatPrice } from "@/lib/utils";
+
+// Always render appointment times in the shop's timezone (Dallas, CT) so
+// both Brian and the customer see "Fri, May 1 · 12:30 PM CT" regardless of
+// where the server or recipient is.
+const fmtWhen = (d: Date) => formatShopDateTime(d, "EEE, MMM d · h:mm a 'CT'");
+const fmtSubject = (d: Date) => formatShopDateTime(d, "EEE MMM d, h:mm a 'CT'");
 
 type Transporter = ReturnType<typeof nodemailer.createTransport>;
 
@@ -101,7 +107,7 @@ export async function sendBarberAppointmentEmail(a: AppointmentEmail) {
   const detailsTable = `<table width="100%" style="margin:16px 0;border-collapse:collapse;">
     ${row("Customer", a.customer.name ?? a.customer.email ?? "—")}
     ${row("Email", a.customer.email ?? "—")}
-    ${row("When", format(a.startsAt, "EEE, MMM d · h:mm a"))}
+    ${row("When", fmtWhen(a.startsAt))}
     ${row("Type", cutTypeLabel)}
     ${row("Cut", a.hairstyleName ?? "Walk-in cut")}
     ${row("Payment", paymentLabel)}
@@ -139,7 +145,7 @@ export async function sendBarberAppointmentEmail(a: AppointmentEmail) {
   await t.sendMail({
     from: process.env.EMAIL_FROM,
     to: recipients,
-    subject: `New booking · ${format(a.startsAt, "EEE MMM d, h:mm a")} · ${a.customer.name ?? "Customer"}`,
+    subject: `New booking · ${fmtSubject(a.startsAt)} · ${a.customer.name ?? "Customer"}`,
     html,
   });
 }
@@ -156,7 +162,7 @@ export async function sendCustomerAppointmentEmail(a: AppointmentEmail) {
       : `${formatPrice(a.priceCents)} — paid online`;
   const detailsTable = `<table width="100%" style="margin:16px 0;border-collapse:collapse;">
     ${row("Barber", `${a.barber.displayName} · ${a.barber.shopName}`)}
-    ${row("When", format(a.startsAt, "EEE, MMM d · h:mm a"))}
+    ${row("When", fmtWhen(a.startsAt))}
     ${row("Type", cutTypeLabel)}
     ${row("Cut", a.hairstyleName ?? "Walk-in cut")}
     ${row("Payment", paymentLabel)}
@@ -185,7 +191,7 @@ export async function sendCustomerAppointmentEmail(a: AppointmentEmail) {
   await t.sendMail({
     from: process.env.EMAIL_FROM,
     to: a.customer.email,
-    subject: `Booked · ${format(a.startsAt, "EEE MMM d, h:mm a")} with ${a.barber.displayName}`,
+    subject: `Booked · ${fmtSubject(a.startsAt)} with ${a.barber.displayName}`,
     html,
   });
 }

@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
-import { addDays, endOfDay, startOfDay } from "date-fns";
+import { addDays } from "date-fns";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
-import { filterAvailableSlots, generateSlots } from "@/lib/booking";
+import { filterAvailableSlots, generateSlots, shopDayBounds } from "@/lib/booking";
 
 export const dynamic = "force-dynamic";
 
@@ -30,22 +30,18 @@ export async function GET(req: Request) {
     return NextResponse.json({ error: "Barber not found" }, { status: 404 });
   }
 
-  // Parse date in local time of server. The booking UI sends a YYYY-MM-DD.
-  const target = new Date(`${date}T00:00:00`);
-  if (Number.isNaN(target.getTime())) {
-    return NextResponse.json({ error: "Invalid date" }, { status: 400 });
-  }
   // Don't allow availability checks more than 60 days out.
-  if (target > addDays(new Date(), 60)) {
+  const { startUtc, endUtc } = shopDayBounds(date);
+  if (startUtc > addDays(new Date(), 60)) {
     return NextResponse.json({ slots: [] });
   }
 
-  const candidates = generateSlots(barber, target);
+  const candidates = generateSlots(barber, date);
 
   const taken = await prisma.appointment.findMany({
     where: {
       barberId,
-      startsAt: { gte: startOfDay(target), lte: endOfDay(target) },
+      startsAt: { gte: startUtc, lte: endUtc },
       status: { in: ["PENDING_PAYMENT", "CONFIRMED"] },
     },
     select: { startsAt: true, endsAt: true },

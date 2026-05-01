@@ -1,9 +1,9 @@
 import Link from "next/link";
-import { format } from "date-fns";
 import { redirect } from "next/navigation";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { formatShopDateTime } from "@/lib/booking";
 import { formatPrice } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
@@ -61,7 +61,7 @@ export default async function CustomerDashboard() {
               )}
               <div className="flex-1">
                 <div className="font-display text-lg">
-                  {format(a.startsAt, "EEE, MMM d · h:mm a")}
+                  {formatShopDateTime(a.startsAt, "EEE, MMM d · h:mm a 'CT'")}
                 </div>
                 <div className="text-sm text-bone-200/70">
                   with {a.barber.displayName} · {a.hairstyle?.name ?? "Walk-in cut"}
@@ -87,7 +87,7 @@ export default async function CustomerDashboard() {
                 <img src={a.tryOnSession.previewUrl} alt="cut" className="h-16 w-16 rounded-xl object-cover" />
               )}
               <div className="flex-1">
-                <div className="font-medium">{format(a.startsAt, "MMM d, yyyy · h:mm a")}</div>
+                <div className="font-medium">{formatShopDateTime(a.startsAt, "MMM d, yyyy · h:mm a")}</div>
                 <div className="text-sm text-bone-200/60">
                   {a.barber.displayName} · {a.hairstyle?.name ?? "Walk-in cut"}
                 </div>

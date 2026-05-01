@@ -1,4 +1,5 @@
-import { addMinutes, format, isBefore, parse, startOfDay } from "date-fns";
+import { addDays } from "date-fns";
+import { format as formatTz, fromZonedTime, formatInTimeZone } from "date-fns-tz";
 import type { Barber } from "@prisma/client";
 import { safeJson } from "@/lib/utils";
 
@@ -6,35 +7,60 @@ type Hours = Record<string, [string, string] | null>;
 
 const WEEKDAY_KEYS = ["sun", "mon", "tue", "wed", "thu", "fri", "sat"] as const;
 
-export function getDayKey(date: Date) {
-  return WEEKDAY_KEYS[date.getDay()];
+/**
+ * The barber's working timezone. All slots are interpreted in this zone, then
+ * stored / sent over the wire as UTC. Every client / email renders back into
+ * this zone so customers and Brian see consistent times.
+ */
+export const SHOP_TZ = "America/Chicago";
+
+export function getDayKey(yyyymmdd: string) {
+  const [y, m, d] = yyyymmdd.split("-").map(Number);
+  // Use UTC math here — we just want the calendar day of the input string.
+  return WEEKDAY_KEYS[new Date(Date.UTC(y, m - 1, d)).getUTCDay()];
+}
+
+export function shopDayBounds(yyyymmdd: string): { startUtc: Date; endUtc: Date } {
+  return {
+    startUtc: fromZonedTime(`${yyyymmdd}T00:00:00`, SHOP_TZ),
+    endUtc: fromZonedTime(`${yyyymmdd}T23:59:59.999`, SHOP_TZ),
+  };
 }
 
 /**
- * Generate every potential start time on a given date, based on the barber's
- * configured working hours and slot length. Returns Date objects in local time.
+ * Generate every potential start time on a given calendar day in the shop's
+ * timezone. Returns UTC Date objects that the client / email can render into
+ * any zone.
  */
-export function generateSlots(barber: Pick<Barber, "workingHours" | "slotMinutes">, date: Date): Date[] {
+export function generateSlots(
+  barber: Pick<Barber, "workingHours" | "slotMinutes">,
+  dateStr: string
+): Date[] {
   const hours = safeJson<Hours>(barber.workingHours, {});
-  const dayKey = getDayKey(date);
-  const range = hours[dayKey];
+  const range = hours[getDayKey(dateStr)];
   if (!range) return [];
 
-  const dayStart = startOfDay(date);
-  const start = parse(range[0], "HH:mm", dayStart);
-  const end = parse(range[1], "HH:mm", dayStart);
+  // "10:00" interpreted in Dallas time → UTC moment
+  const startUtc = fromZonedTime(`${dateStr}T${range[0]}:00`, SHOP_TZ);
+  const endUtc = fromZonedTime(`${dateStr}T${range[1]}:00`, SHOP_TZ);
 
   const slots: Date[] = [];
-  let cursor = start;
-  while (isBefore(addMinutes(cursor, barber.slotMinutes), end) || +addMinutes(cursor, barber.slotMinutes) === +end) {
-    slots.push(cursor);
-    cursor = addMinutes(cursor, barber.slotMinutes);
+  const slotMs = barber.slotMinutes * 60 * 1000;
+  let cursorMs = startUtc.getTime();
+  const endMs = endUtc.getTime();
+  while (cursorMs + slotMs <= endMs) {
+    slots.push(new Date(cursorMs));
+    cursorMs += slotMs;
   }
   return slots;
 }
 
 export function formatSlotLabel(date: Date) {
-  return format(date, "h:mm a");
+  return formatInTimeZone(date, SHOP_TZ, "h:mm a");
+}
+
+export function formatShopDateTime(date: Date, fmt = "EEE, MMM d · h:mm a 'CT'") {
+  return formatInTimeZone(date, SHOP_TZ, fmt);
 }
 
 /**
@@ -48,12 +74,15 @@ export function filterAvailableSlots(
   now: Date = new Date()
 ): Date[] {
   return candidates.filter((slotStart) => {
-    if (isBefore(slotStart, now)) return false;
-    const slotEnd = addMinutes(slotStart, slotMinutes);
+    if (slotStart.getTime() < now.getTime()) return false;
+    const slotEnd = new Date(slotStart.getTime() + slotMinutes * 60 * 1000);
     return !taken.some(
       (t) =>
         // overlap test
-        isBefore(t.startsAt, slotEnd) && isBefore(slotStart, t.endsAt)
+        t.startsAt.getTime() < slotEnd.getTime() && slotStart.getTime() < t.endsAt.getTime()
     );
   });
 }
+
+// Re-exported for callers that want raw date-fns-tz formatting elsewhere
+export { formatTz, formatInTimeZone, addDays };

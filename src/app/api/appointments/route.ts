@@ -5,6 +5,7 @@ import { z } from "zod";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { stripe } from "@/lib/stripe";
+import { formatShopDateTime } from "@/lib/booking";
 import {
   isMailConfigured,
   sendBarberAppointmentEmail,
@@ -165,7 +166,7 @@ export async function POST(req: Request) {
           unit_amount: priceCents,
           product_data: {
             name: `${cutTypeLabel} with ${barber.displayName}`,
-            description: `The Cutting Cartel · ${start.toLocaleString()}`,
+            description: `The Cutting Cartel · ${formatShopDateTime(start, "EEE, MMM d · h:mm a 'CT'")}`,
           },
         },
       },

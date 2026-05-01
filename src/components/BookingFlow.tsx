@@ -2,8 +2,15 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { addDays, format } from "date-fns";
+import { formatInTimeZone } from "date-fns-tz";
 import { Calendar, Clock, CreditCard, ChevronRight, User, Baby, Wallet } from "lucide-react";
 import { formatPrice } from "@/lib/utils";
+
+const SHOP_TZ = "America/Chicago";
+const fmtSlot = (iso: string) => formatInTimeZone(new Date(iso), SHOP_TZ, "h:mm a");
+const fmtSummaryDate = (yyyymmdd: string) =>
+  format(new Date(`${yyyymmdd}T12:00:00Z`), "EEE, MMM d");
+const fmtSummaryTime = (iso: string) => formatInTimeZone(new Date(iso), SHOP_TZ, "h:mm a 'CT'");
 
 type Barber = {
   id: string;
@@ -242,8 +249,7 @@ export function BookingFlow({ barbers, tryOn }: { barbers: Barber[]; tryOn: TryO
           ) : (
             <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4">
               {slots.map((iso) => {
-                const d = new Date(iso);
-                const label = format(d, "h:mm a");
+                const label = fmtSlot(iso);
                 return (
                   <button
                     key={iso}
@@ -310,14 +316,8 @@ export function BookingFlow({ barbers, tryOn }: { barbers: Barber[]; tryOn: TryO
           <div className="mt-3 space-y-1 text-sm">
             <Row label="Type" value={cutType === "kid" ? "Kids cut" : "Adult cut"} />
             <Row label="Barber" value={barber?.displayName ?? "—"} />
-            <Row
-              label="Date"
-              value={date ? format(new Date(date + "T00:00:00"), "EEE, MMM d") : "—"}
-            />
-            <Row
-              label="Time"
-              value={selectedSlot ? format(new Date(selectedSlot), "h:mm a") : "—"}
-            />
+            <Row label="Date" value={date ? fmtSummaryDate(date) : "—"} />
+            <Row label="Time" value={selectedSlot ? fmtSummaryTime(selectedSlot) : "—"} />
             <Row label="Style" value={tryOn?.hairstyle?.name ?? "Walk-in cut"} />
             <Row
               label="Payment"
