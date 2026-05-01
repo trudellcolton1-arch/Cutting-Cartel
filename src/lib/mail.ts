@@ -78,12 +78,18 @@ function row(label: string, value: string) {
 
 /**
  * Returns the email recipients that should be notified for any new booking.
- * BARBER_NOTIFICATION_EMAILS env var (comma-separated) overrides the barber's
- * own user.email so Brian can route notifications anywhere — useful when the
- * seeded user.email isn't his real inbox.
+ * Resolves the override env var with tolerance for common typos / pluralization
+ * mistakes — every reasonable spelling routes to the same place.
  */
 function notificationRecipients(barberEmail: string | null): string[] {
-  const override = process.env.BARBER_NOTIFICATION_EMAILS;
+  const env = process.env;
+  const override =
+    env.BARBER_NOTIFICATION_EMAILS ||
+    env.BARBER_NOTIFICATIONS_EMAILS ||
+    env.BARBER_NOTIFICATION_EMAIL ||
+    env.BARBER_NOTIFICATIONS_EMAIL ||
+    env.BARBER_EMAIL ||
+    env.BARBER_EMAILS;
   if (override) {
     return override
       .split(",")

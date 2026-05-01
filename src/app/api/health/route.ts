@@ -84,6 +84,23 @@ export async function GET() {
       EMAIL_SERVER_PASSWORD_set: present(env.EMAIL_SERVER_PASSWORD),
       EMAIL_FROM_set: present(env.EMAIL_FROM),
       BARBER_NOTIFICATION_EMAILS_set: present(env.BARBER_NOTIFICATION_EMAILS),
+      BARBER_NOTIFICATIONS_EMAILS_set: present(env.BARBER_NOTIFICATIONS_EMAILS),
+      BARBER_NOTIFICATION_EMAIL_set: present(env.BARBER_NOTIFICATION_EMAIL),
+      BARBER_NOTIFICATIONS_EMAIL_set: present(env.BARBER_NOTIFICATIONS_EMAIL),
+      BARBER_EMAIL_set: present(env.BARBER_EMAIL),
+      BARBER_EMAILS_set: present(env.BARBER_EMAILS),
+      // Show the value's domain only (not the whole address) for verification
+      barber_email_value_preview:
+        (env.BARBER_NOTIFICATION_EMAILS ||
+          env.BARBER_NOTIFICATIONS_EMAILS ||
+          env.BARBER_NOTIFICATION_EMAIL ||
+          env.BARBER_NOTIFICATIONS_EMAIL ||
+          env.BARBER_EMAIL ||
+          env.BARBER_EMAILS ||
+          "")
+          .split(",")[0]
+          ?.trim()
+          .replace(/^([^@]{2}).+(@.+)$/, "$1***$2") || null,
     },
 
     app: {
