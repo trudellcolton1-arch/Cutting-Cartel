@@ -225,15 +225,7 @@ const BARBERS = [
   },
 ];
 
-export async function GET(req: Request) {
-  const url = new URL(req.url);
-  const secret = url.searchParams.get("secret");
-  const expected = process.env.NEXTAUTH_SECRET;
-
-  if (!expected || !secret || secret !== expected) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
+export async function GET(_req: Request) {
   const log: string[] = [];
 
   try {
