@@ -101,12 +101,9 @@ model Hairstyle {
   name        String
   category    String   // fade, taper, textured, classic, design
   description String?
-  // PNG overlay aligned to face landmarks (transparent background)
-  overlayUrl  String
+  // descriptive fragment fed to FLUX+PuLID, e.g. "low fade with textured top"
+  prompt      String   @default("a fresh haircut")
   thumbnailUrl String
-  // alignment hints used by the try-on overlay engine
-  anchorTopRatio   Float @default(0.0)   // overlay top relative to head top (0..1)
-  anchorScaleRatio Float @default(1.6)   // width = faceWidth * scaleRatio
   defaultLength    Int   @default(3)     // 1..5
   defaultFade      Int   @default(2)     // 0..5 (0 = none, 5 = skin)
   isActive         Boolean @default(true)

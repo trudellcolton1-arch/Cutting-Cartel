@@ -2,20 +2,10 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Camera, Upload, Lock, RefreshCw, Sliders } from "lucide-react";
+import { Camera, Upload, Lock, RefreshCw, Sliders, Sparkles, Wand2 } from "lucide-react";
 import type { Hairstyle } from "@prisma/client";
 
-type Landmarks = {
-  faceTop: { x: number; y: number };
-  faceBottom: { x: number; y: number };
-  leftEye: { x: number; y: number };
-  rightEye: { x: number; y: number };
-  faceWidth: number;
-  faceHeight: number;
-  angleRad: number;
-};
-
-const MODEL_BASE = "/models"; // tinyFaceDetector + faceLandmark68 weights live under public/models
+type GenState = "idle" | "uploading" | "generating" | "done" | "error";
 
 export function TryOnStudio({
   styles,
@@ -27,241 +17,154 @@ export function TryOnStudio({
   const router = useRouter();
 
   const [selectedId, setSelectedId] = useState<string | undefined>(initialStyleId ?? styles[0]?.id);
-  const [selfie, setSelfie] = useState<string | null>(null);
+  const [selfieDataUrl, setSelfieDataUrl] = useState<string | null>(null);
+  const [selfieRemoteUrl, setSelfieRemoteUrl] = useState<string | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [length, setLength] = useState(3);
   const [fade, setFade] = useState(2);
   const [notes, setNotes] = useState("");
+  const [genState, setGenState] = useState<GenState>("idle");
+  const [status, setStatus] = useState("Upload a selfie to start.");
   const [busy, setBusy] = useState(false);
-  const [status, setStatus] = useState<string>("Ready when you are.");
-  const [modelsReady, setModelsReady] = useState(false);
-  const [landmarks, setLandmarks] = useState<Landmarks | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const baseImgRef = useRef<HTMLImageElement | null>(null);
-  const overlayImgRef = useRef<HTMLImageElement | null>(null);
+  // increment to abort stale generation responses
+  const genTokenRef = useRef(0);
 
   const selected = styles.find((s) => s.id === selectedId);
 
-  // Load face-api.js dynamically (client only) — keeps SSR clean.
-  const loadModels = useCallback(async () => {
+  // Upload selfie once to Cloudinary so we can pass an https URL to Replicate.
+  const uploadSelfie = useCallback(async (dataUrl: string): Promise<string | null> => {
+    setGenState("uploading");
+    setStatus("Uploading selfie…");
     try {
-      const faceapi = await import("face-api.js");
-      await Promise.all([
-        faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_BASE),
-        faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_BASE),
-      ]);
-      setModelsReady(true);
-      return faceapi;
-    } catch (e) {
-      console.warn("[try-on] face-api models failed to load — falling back to centered overlay", e);
-      setModelsReady(false);
-      return null;
-    }
-  }, []);
-
-  useEffect(() => {
-    void loadModels();
-  }, [loadModels]);
-
-  // Detect landmarks once a selfie is loaded.
-  const detect = useCallback(async (img: HTMLImageElement) => {
-    try {
-      const faceapi = await import("face-api.js");
-      if (!faceapi.nets.tinyFaceDetector.params) {
-        await faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_BASE);
-        await faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_BASE);
-      }
-      const result = await faceapi
-        .detectSingleFace(img, new faceapi.TinyFaceDetectorOptions({ inputSize: 320, scoreThreshold: 0.4 }))
-        .withFaceLandmarks();
-      if (!result) return null;
-
-      const lm = result.landmarks;
-      const jaw = lm.getJawOutline();
-      const leftEyePts = lm.getLeftEye();
-      const rightEyePts = lm.getRightEye();
-      const box = result.detection.box;
-
-      const center = (pts: { x: number; y: number }[]) => ({
-        x: pts.reduce((s, p) => s + p.x, 0) / pts.length,
-        y: pts.reduce((s, p) => s + p.y, 0) / pts.length,
+      const res = await fetch("/api/upload", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ data: dataUrl, kind: "selfie" }),
       });
-
-      const leftEye = center(leftEyePts);
-      const rightEye = center(rightEyePts);
-      const angleRad = Math.atan2(rightEye.y - leftEye.y, rightEye.x - leftEye.x);
-
-      const faceTop = { x: (box.left + box.right) / 2, y: box.top };
-      const faceBottom = jaw[Math.floor(jaw.length / 2)];
-
-      return {
-        faceTop,
-        faceBottom: { x: faceBottom.x, y: faceBottom.y },
-        leftEye,
-        rightEye,
-        faceWidth: box.width,
-        faceHeight: box.height,
-        angleRad,
-      } satisfies Landmarks;
+      if (!res.ok) throw new Error("upload failed");
+      const json = await res.json();
+      return json.url as string;
     } catch (e) {
-      console.warn("[try-on] detection failed", e);
+      console.error(e);
+      setError("Upload failed. Try again.");
+      setGenState("error");
       return null;
     }
   }, []);
 
-  // Render the composite (selfie + hairstyle overlay) onto canvas.
-  const renderComposite = useCallback(() => {
-    const canvas = canvasRef.current;
-    const baseImg = baseImgRef.current;
-    if (!canvas || !baseImg) return;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
+  // Kick off a Replicate generation. Token-protected so a slow response from
+  // a previous style doesn't clobber the latest one.
+  const generate = useCallback(
+    async (selfie: string, hairstyleId: string, len: number, fd: number) => {
+      const token = ++genTokenRef.current;
+      setGenState("generating");
+      setError(null);
+      setStatus("Cutline AI is cutting your hair… (12–25s)");
+      try {
+        const res = await fetch("/api/cutline-ai/generate", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ selfieUrl: selfie, hairstyleId, length: len, fade: fd }),
+        });
+        if (token !== genTokenRef.current) return; // stale
+        if (!res.ok) {
+          const j = await res.json().catch(() => ({}));
+          throw new Error(j.error ?? "Generation failed");
+        }
+        const { previewUrl } = await res.json();
+        if (token !== genTokenRef.current) return;
+        setPreviewUrl(previewUrl);
+        setGenState("done");
+        setStatus("Looking good. Tweak it or lock it in.");
+      } catch (e) {
+        if (token !== genTokenRef.current) return;
+        const msg = e instanceof Error ? e.message : "Generation failed";
+        setError(msg);
+        setGenState("error");
+        setStatus("Generation failed.");
+      }
+    },
+    []
+  );
 
-    const w = baseImg.naturalWidth || 720;
-    const h = baseImg.naturalHeight || 960;
-    canvas.width = w;
-    canvas.height = h;
-    ctx.clearRect(0, 0, w, h);
-    ctx.drawImage(baseImg, 0, 0, w, h);
-
-    if (!selected) return;
-    const overlay = overlayImgRef.current;
-    if (!overlay || !overlay.complete) return;
-
-    // length scales the overlay's vertical extent slightly (1..5 -> 0.85..1.15)
-    const lengthScale = 0.85 + (length - 1) * 0.075;
-    // fade tightens the bottom of the hair against the temples (visual cue)
-    const fadeTighten = 1 - fade * 0.04;
-
-    if (landmarks) {
-      const { faceTop, faceWidth, angleRad } = landmarks;
-      const targetWidth = faceWidth * selected.anchorScaleRatio * fadeTighten;
-      const aspect = overlay.naturalHeight / overlay.naturalWidth;
-      const targetHeight = targetWidth * aspect * lengthScale;
-
-      const cx = faceTop.x;
-      const cy = faceTop.y - targetHeight * (0.4 - selected.anchorTopRatio);
-
-      ctx.save();
-      ctx.translate(cx, cy);
-      ctx.rotate(angleRad);
-      ctx.drawImage(overlay, -targetWidth / 2, -targetHeight / 2, targetWidth, targetHeight);
-      ctx.restore();
-    } else {
-      // Fallback — centered, scaled to a heuristic 55% of image width.
-      const targetWidth = w * 0.55 * fadeTighten;
-      const aspect = overlay.naturalHeight / overlay.naturalWidth;
-      const targetHeight = targetWidth * aspect * lengthScale;
-      const cx = w / 2;
-      const cy = h * 0.22;
-      ctx.drawImage(overlay, cx - targetWidth / 2, cy - targetHeight / 2, targetWidth, targetHeight);
-    }
-  }, [selected, landmarks, length, fade]);
-
-  // Re-render whenever inputs change.
-  useEffect(() => {
-    renderComposite();
-  }, [renderComposite, selfie, selectedId, length, fade]);
-
-  // Pre-load overlay image whenever selection changes.
-  useEffect(() => {
-    if (!selected) return;
-    const img = new Image();
-    img.crossOrigin = "anonymous";
-    img.onload = () => {
-      overlayImgRef.current = img;
-      renderComposite();
-    };
-    img.onerror = () => {
-      overlayImgRef.current = null;
-    };
-    img.src = selected.overlayUrl;
-  }, [selected, renderComposite]);
-
-  // Handle file selection.
+  // When user picks a new selfie, upload + auto-generate with the current style.
   const onFile = (file: File) => {
     if (!file.type.startsWith("image/")) {
-      setStatus("That doesn't look like an image.");
+      setError("That doesn't look like an image.");
       return;
     }
     const reader = new FileReader();
     reader.onload = async () => {
       const dataUrl = reader.result as string;
-      setSelfie(dataUrl);
-      setStatus("Detecting face…");
-      const img = new Image();
-      img.onload = async () => {
-        baseImgRef.current = img;
-        const lm = await detect(img);
-        setLandmarks(lm);
-        setStatus(lm ? "Face locked. Style your cut." : "Couldn't pin landmarks — using centered overlay.");
-        renderComposite();
-      };
-      img.src = dataUrl;
+      setSelfieDataUrl(dataUrl);
+      setPreviewUrl(null);
+      const remote = await uploadSelfie(dataUrl);
+      if (!remote) return;
+      setSelfieRemoteUrl(remote);
+      if (selected) generate(remote, selected.id, length, fade);
     };
     reader.readAsDataURL(file);
   };
 
-  // Webcam capture.
+  // Webcam capture — same flow as upload.
   const captureFromCamera = async () => {
     try {
       setStatus("Opening camera…");
       const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: "user", width: { ideal: 720 }, height: { ideal: 960 } },
+        video: { facingMode: "user", width: { ideal: 768 }, height: { ideal: 1024 } },
         audio: false,
       });
       const video = videoRef.current;
       if (!video) return;
       video.srcObject = stream;
       await video.play();
-      // wait one frame
       await new Promise((r) => setTimeout(r, 600));
       const c = document.createElement("canvas");
       c.width = video.videoWidth;
       c.height = video.videoHeight;
       c.getContext("2d")!.drawImage(video, 0, 0);
       stream.getTracks().forEach((t) => t.stop());
-      const dataUrl = c.toDataURL("image/jpeg", 0.9);
-      const file = await (await fetch(dataUrl)).blob();
-      onFile(new File([file], "selfie.jpg", { type: "image/jpeg" }));
+      const dataUrl = c.toDataURL("image/jpeg", 0.92);
+      const blob = await (await fetch(dataUrl)).blob();
+      onFile(new File([blob], "selfie.jpg", { type: "image/jpeg" }));
     } catch (e) {
       console.warn(e);
-      setStatus("Camera access denied. Upload a photo instead.");
+      setError("Camera access denied. Upload a photo instead.");
     }
   };
 
-  // Lock-in flow: upload selfie + composite, create try-on session, redirect to booking.
+  // Re-generate when style/length/fade change (debounced — we don't want to
+  // spam Replicate while someone drags the slider).
+  useEffect(() => {
+    if (!selfieRemoteUrl || !selected) return;
+    const handle = setTimeout(() => {
+      generate(selfieRemoteUrl, selected.id, length, fade);
+    }, 350);
+    return () => clearTimeout(handle);
+    // intentionally exclude `generate` (stable from useCallback)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedId, length, fade, selfieRemoteUrl]);
+
   const lockInCut = async () => {
-    if (!selfie || !selected) {
-      setStatus("Select a style and a selfie first.");
+    if (!selfieRemoteUrl || !previewUrl || !selected) {
+      setError("Wait for the AI cut to finish first.");
       return;
     }
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-
     setBusy(true);
+    setError(null);
     setStatus("Saving your cut…");
-
     try {
-      const previewDataUrl = canvas.toDataURL("image/jpeg", 0.9);
-
-      const [selfieRes, previewRes] = await Promise.all([
-        fetch("/api/upload", {
-          method: "POST",
-          headers: { "content-type": "application/json" },
-          body: JSON.stringify({ data: selfie, kind: "selfie" }),
-        }),
-        fetch("/api/upload", {
-          method: "POST",
-          headers: { "content-type": "application/json" },
-          body: JSON.stringify({ data: previewDataUrl, kind: "preview" }),
-        }),
-      ]);
-
-      if (!selfieRes.ok || !previewRes.ok) throw new Error("Upload failed");
-      const selfieJson = await selfieRes.json();
+      // Re-upload the Replicate output to Cloudinary for permanent storage
+      const previewRes = await fetch("/api/upload", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ data: previewUrl, kind: "preview" }),
+      });
+      if (!previewRes.ok) throw new Error("Preview upload failed");
       const previewJson = await previewRes.json();
 
       const sessRes = await fetch("/api/try-on", {
@@ -269,7 +172,7 @@ export function TryOnStudio({
         headers: { "content-type": "application/json" },
         body: JSON.stringify({
           hairstyleId: selected.id,
-          selfieUrl: selfieJson.url,
+          selfieUrl: selfieRemoteUrl,
           previewUrl: previewJson.url,
           length,
           fade,
@@ -278,34 +181,77 @@ export function TryOnStudio({
       });
       if (!sessRes.ok) throw new Error("Could not save try-on");
       const { tryOn } = await sessRes.json();
-
       router.push(`/booking?tryOnId=${tryOn.id}`);
     } catch (e) {
       console.error(e);
-      setStatus("Something went wrong. Try again.");
+      setError(e instanceof Error ? e.message : "Something went wrong.");
       setBusy(false);
     }
   };
 
+  const reset = () => {
+    setSelfieDataUrl(null);
+    setSelfieRemoteUrl(null);
+    setPreviewUrl(null);
+    setGenState("idle");
+    setError(null);
+    setStatus("Upload a selfie to start.");
+    genTokenRef.current++;
+  };
+
+  const showSpinner = genState === "uploading" || genState === "generating";
+  const displayImage = previewUrl ?? selfieDataUrl;
+
   return (
     <div className="grid gap-6 lg:grid-cols-[1fr_360px]">
-      {/* Canvas */}
+      {/* Preview canvas */}
       <div className="card">
         <div className="relative aspect-[3/4] w-full overflow-hidden rounded-xl bg-ink-700">
-          {!selfie && (
+          {!displayImage ? (
             <div className="absolute inset-0 grid place-items-center text-center text-sm text-bone-200/60">
               <div className="px-6">
-                <Camera className="mx-auto mb-2 h-8 w-8 text-cartel-300" />
-                <div>Upload a selfie or use your camera to begin.</div>
-                <div className="mt-2 text-xs text-bone-200/40">
-                  Models {modelsReady ? "loaded" : "loading…"}
+                <Sparkles className="mx-auto mb-2 h-8 w-8 text-cartel-300" />
+                <div className="font-display text-base text-bone-50">Cutline AI</div>
+                <div className="mt-1 text-xs text-bone-200/60">
+                  Upload or shoot a selfie. We&apos;ll cut your hair with AI.
                 </div>
               </div>
             </div>
+          ) : (
+            <>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={displayImage}
+                alt="preview"
+                className="absolute inset-0 h-full w-full object-cover transition-opacity duration-300"
+                style={{ opacity: showSpinner ? 0.45 : 1 }}
+              />
+              {showSpinner && (
+                <div className="absolute inset-0 grid place-items-center">
+                  <div className="rounded-2xl bg-ink-900/80 px-5 py-4 backdrop-blur">
+                    <div className="flex items-center gap-3 text-sm">
+                      <Wand2 className="h-4 w-4 animate-pulse text-cartel-300" />
+                      <span>
+                        {genState === "uploading" ? "Uploading selfie…" : "Cutline AI is cutting…"}
+                      </span>
+                    </div>
+                    <div className="mt-2 h-1 w-48 overflow-hidden rounded-full bg-ink-700">
+                      <div className="h-full w-1/2 animate-[loader_1.4s_ease-in-out_infinite] bg-cartel-500" />
+                    </div>
+                  </div>
+                </div>
+              )}
+              {previewUrl && genState === "done" && (
+                <span className="pill absolute left-3 top-3 border-blade-500/50 bg-blade-500/10 text-blade-400">
+                  <Sparkles className="h-3 w-3" /> AI preview
+                </span>
+              )}
+            </>
           )}
-          <canvas ref={canvasRef} className="absolute inset-0 h-full w-full object-cover" />
           <video ref={videoRef} className="hidden" playsInline />
         </div>
+
+        <style>{`@keyframes loader { 0%{transform:translateX(-100%);} 50%{transform:translateX(50%);} 100%{transform:translateX(200%);} }`}</style>
 
         <div className="mt-4 flex flex-wrap gap-2">
           <button onClick={() => fileInputRef.current?.click()} className="btn-ghost">
@@ -314,21 +260,17 @@ export function TryOnStudio({
           <button onClick={captureFromCamera} className="btn-ghost">
             <Camera className="h-4 w-4" /> Use camera
           </button>
-          {selfie && (
+          {selfieRemoteUrl && selected && genState !== "generating" && (
             <button
-              onClick={() => {
-                setSelfie(null);
-                setLandmarks(null);
-                baseImgRef.current = null;
-                if (canvasRef.current) {
-                  const ctx = canvasRef.current.getContext("2d");
-                  ctx?.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
-                }
-                setStatus("Cleared. Upload another.");
-              }}
+              onClick={() => generate(selfieRemoteUrl, selected.id, length, fade)}
               className="btn-ghost"
             >
-              <RefreshCw className="h-4 w-4" /> Clear
+              <RefreshCw className="h-4 w-4" /> Re-roll
+            </button>
+          )}
+          {displayImage && (
+            <button onClick={reset} className="btn-ghost">
+              Clear
             </button>
           )}
           <input
@@ -341,6 +283,7 @@ export function TryOnStudio({
         </div>
 
         <p className="mt-3 text-xs text-bone-200/60">{status}</p>
+        {error && <p className="mt-1 text-xs text-red-400">{error}</p>}
       </div>
 
       {/* Sidebar */}
@@ -415,14 +358,18 @@ export function TryOnStudio({
         </div>
 
         <button
-          disabled={busy || !selfie || !selected}
+          disabled={busy || genState !== "done" || !previewUrl}
           onClick={lockInCut}
           className="btn-primary w-full justify-center"
         >
           <Lock className="h-4 w-4" />
           {busy ? "Locking in…" : "Lock This Cut"}
         </button>
-        {!selfie && <p className="text-center text-xs text-bone-200/50">Add a selfie to unlock</p>}
+        {!previewUrl && (
+          <p className="text-center text-xs text-bone-200/50">
+            Cutline AI needs to finish the cut first
+          </p>
+        )}
       </div>
     </div>
   );

@@ -2,6 +2,11 @@ import { NextResponse } from "next/server";
 import type Stripe from "stripe";
 import { prisma } from "@/lib/prisma";
 import { stripe } from "@/lib/stripe";
+import {
+  isMailConfigured,
+  sendBarberAppointmentEmail,
+  sendCustomerAppointmentEmail,
+} from "@/lib/mail";
 
 // Stripe needs the raw body to verify the signature.
 export const runtime = "nodejs";
@@ -50,6 +55,47 @@ export async function POST(req: Request) {
             },
           });
         });
+
+        // Email both sides — best-effort, don't fail the webhook if SMTP is down
+        if (isMailConfigured()) {
+          try {
+            const appt = await prisma.appointment.findUnique({
+              where: { id: appointmentId },
+              include: {
+                customer: { select: { name: true, email: true } },
+                barber: { include: { user: { select: { email: true } } } },
+                hairstyle: { select: { name: true } },
+                tryOnSession: { select: { previewUrl: true, selfieUrl: true, notes: true } },
+              },
+            });
+            if (appt) {
+              const appUrl =
+                process.env.NEXT_PUBLIC_APP_URL ?? "https://cuttingcartel.com";
+              const payload = {
+                appointmentId: appt.id,
+                startsAt: appt.startsAt,
+                priceCents: appt.priceCents,
+                customer: { name: appt.customer.name, email: appt.customer.email },
+                barber: {
+                  displayName: appt.barber.displayName,
+                  shopName: appt.barber.shopName,
+                  userEmail: appt.barber.user.email,
+                },
+                hairstyleName: appt.hairstyle?.name ?? null,
+                notes: appt.tryOnSession?.notes ?? appt.notes ?? null,
+                previewUrl: appt.tryOnSession?.previewUrl ?? null,
+                selfieUrl: appt.tryOnSession?.selfieUrl ?? null,
+                appUrl,
+              };
+              await Promise.allSettled([
+                sendBarberAppointmentEmail(payload),
+                sendCustomerAppointmentEmail(payload),
+              ]);
+            }
+          } catch (e) {
+            console.error("[stripe] notification email failed", e);
+          }
+        }
         break;
       }
       case "checkout.session.expired":
