@@ -160,7 +160,7 @@ export default async function Home() {
                   Book a chair
                 </Link>
                 <Link href="/auth/signin" className="btn-ghost">
-                  Barber login
+                  Client login
                 </Link>
               </div>
             </div>
