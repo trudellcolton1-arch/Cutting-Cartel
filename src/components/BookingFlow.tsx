@@ -125,8 +125,8 @@ export function BookingFlow({ barbers, tryOn }: { barbers: Barber[]; tryOn: TryO
   }
 
   return (
-    <div className="mt-6 grid gap-6 lg:grid-cols-[1fr_360px]">
-      <div className="space-y-4">
+    <div className="mt-6 flex flex-col gap-6 lg:grid lg:grid-cols-[1fr_360px]">
+      <div className="min-w-0 space-y-4">
         {tryOn && (
           <div className="card flex gap-3 sm:gap-4">
             {tryOn.previewUrl && (
@@ -213,7 +213,7 @@ export function BookingFlow({ barbers, tryOn }: { barbers: Barber[]; tryOn: TryO
           <h3 className="flex items-center gap-2 font-display text-lg">
             <Calendar className="h-4 w-4 text-cartel-300" /> Pick a day
           </h3>
-          <div className="mt-3 -mx-2 flex gap-2 overflow-x-auto px-2 pb-1">
+          <div className="no-scrollbar mt-3 -mx-2 flex gap-2 overflow-x-auto px-2 pb-1">
             {dateOptions.map((d) => (
               <button
                 key={d.value}
@@ -304,7 +304,7 @@ export function BookingFlow({ barbers, tryOn }: { barbers: Barber[]; tryOn: TryO
       </div>
 
       {/* Sticky summary */}
-      <aside className="lg:sticky lg:top-20 lg:self-start">
+      <aside className="min-w-0 lg:sticky lg:top-20 lg:self-start">
         <div className="card">
           <h3 className="font-display text-lg">Order summary</h3>
           <div className="mt-3 space-y-1 text-sm">

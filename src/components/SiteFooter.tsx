@@ -1,6 +1,8 @@
 export function SiteFooter() {
   return (
-    <footer className="mt-24 border-t border-ink-700">
+    // Hide on mobile — the bottom tab bar takes that real estate.
+    // Surfaces on desktop where the footer makes sense.
+    <footer className="mt-24 hidden border-t border-ink-700 md:block">
       <div className="mx-auto flex max-w-6xl flex-col items-start gap-3 px-4 py-8 text-xs text-bone-200/60 md:flex-row md:items-center md:justify-between">
         <div>
           © {new Date().getFullYear()} The Cutting Cartel · Dallas, TX · Built by Brian Williams

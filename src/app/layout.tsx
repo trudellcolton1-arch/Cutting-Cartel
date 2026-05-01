@@ -4,6 +4,7 @@ import "./globals.css";
 import { Providers } from "./providers";
 import { SiteHeader } from "@/components/SiteHeader";
 import { SiteFooter } from "@/components/SiteFooter";
+import { MobileTabBar } from "@/components/MobileTabBar";
 
 // Normalize a possibly-malformed URL string. Trims whitespace, collapses
 // duplicated "https://" prefixes (a common copy-paste typo), and falls back
@@ -97,16 +98,33 @@ export async function generateMetadata(): Promise<Metadata> {
 
 export const viewport: Viewport = {
   themeColor: "#0a0a0b",
+  // viewport-fit=cover lets us paint into the iOS notch / home-bar area
+  // and use env(safe-area-inset-*) for tab-bar / header padding
+  viewportFit: "cover",
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
-      <body className="min-h-screen bg-ink-900 text-bone-50">
+      <head>
+        {/* iOS standalone PWA polish */}
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+        <meta name="apple-mobile-web-app-title" content="Cutting Cartel" />
+        <meta name="mobile-web-app-capable" content="yes" />
+        <meta name="format-detection" content="telephone=no" />
+      </head>
+      <body className="min-h-screen overflow-x-hidden bg-ink-900 text-bone-50">
         <Providers>
           <SiteHeader />
-          <main className="min-h-[calc(100vh-12rem)]">{children}</main>
+          {/* bottom padding leaves room for the mobile tab bar (h-14 + safe area) */}
+          <main className="min-h-[calc(100vh-12rem)] pb-20 md:pb-0">{children}</main>
           <SiteFooter />
+          <MobileTabBar />
         </Providers>
       </body>
     </html>

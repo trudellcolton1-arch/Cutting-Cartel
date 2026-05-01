@@ -4,6 +4,18 @@
 
 :root {
   color-scheme: dark;
+  /* expose iOS safe-area insets for any component that wants them */
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+html {
+  /* kill the gray flash when tapping links / buttons in mobile Safari */
+  -webkit-tap-highlight-color: transparent;
+  /* smooth scroll for anchor jumps */
+  scroll-behavior: smooth;
+  /* don't bounce the body — feels more app-like */
+  overscroll-behavior-y: none;
 }
 
 html,
@@ -11,11 +23,37 @@ body {
   background: #0a0a0b;
   color: #fafaf7;
   -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+body {
+  overflow-x: hidden;
+}
+
+/* hide scrollbars on the date scroller / horizontal carousels */
+.no-scrollbar {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+/* bottom safe area + tab bar height pad — apply to scrollable views */
+.pb-tabbar {
+  padding-bottom: calc(5rem + env(safe-area-inset-bottom, 0px));
 }
 
 ::selection {
   background: #d99a2b;
   color: #0a0a0b;
+}
+
+/* prevent text selection on UI chrome (buttons, tab bar, header) */
+button,
+a {
+  -webkit-user-select: none;
+  user-select: none;
 }
 
 @layer components {
