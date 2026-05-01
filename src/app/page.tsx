@@ -43,7 +43,7 @@ export default async function Home() {
         <div className="relative mx-auto max-w-6xl px-4 pt-12 pb-16 sm:pt-16 sm:pb-20 md:pt-24 md:pb-28">
           <div className="flex flex-col items-start gap-5 sm:gap-6">
             <span className="pill border-cartel-500/40 bg-cartel-500/10 text-cartel-300">
-              <Sparkles className="h-3.5 w-3.5" /> Dallas · Texas
+              <Sparkles className="h-3.5 w-3.5" /> Serving the DFW Metroplex
             </span>
             <h1 className="font-display text-[2.75rem] leading-[0.95] tracking-tight sm:text-6xl md:text-8xl">
               The Cutting
