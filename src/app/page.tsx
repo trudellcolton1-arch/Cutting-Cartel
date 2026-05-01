@@ -27,26 +27,24 @@ export default async function Home() {
         <div className="mx-auto max-w-6xl px-4 pt-16 pb-20 md:pt-24 md:pb-28">
           <div className="flex flex-col items-start gap-6">
             <span className="pill border-cartel-500/40 bg-cartel-500/10 text-cartel-300">
-              <Sparkles className="h-3.5 w-3.5" /> AI-powered cut visualization
+              <Sparkles className="h-3.5 w-3.5" /> Dallas · Texas
             </span>
-            <h1 className="font-display text-4xl leading-[1.05] tracking-tight md:text-7xl">
-              See the cut.
+            <h1 className="font-display text-5xl leading-[0.95] tracking-tight md:text-8xl">
+              The Cutting
               <br />
-              <span className="text-cartel-300">Lock the line.</span>
-              <br />
-              Sit in the chair.
+              <span className="text-cartel-300">Cartel.</span>
             </h1>
             <p className="max-w-xl text-base text-bone-100/80 md:text-lg">
-              Cutline AI lets you try on hairstyles with your real face, then book a chair with The
-              Cutting Cartel — paid up front, with your reference shot already in your barber&apos;s
-              hands.
+              Dallas&apos;s premier barber experience. Book your chair, prepay online, and use{" "}
+              <span className="font-semibold text-cartel-300">Cutline AI</span> — our in-house
+              hairstyle try-on — to lock the look before you sit down.
             </p>
             <div className="flex flex-wrap items-center gap-3">
-              <Link href="/try-on" className="btn-primary">
-                Try Your Cut <ArrowRight className="h-4 w-4" />
+              <Link href="/booking" className="btn-primary">
+                Book a chair <ArrowRight className="h-4 w-4" />
               </Link>
-              <Link href="/booking" className="btn-ghost">
-                Book Appointment
+              <Link href="/try-on" className="btn-ghost">
+                Try a cut with Cutline AI
               </Link>
             </div>
           </div>
@@ -59,10 +57,26 @@ export default async function Home() {
         <h2 className="font-display text-2xl md:text-3xl">How it works</h2>
         <div className="mt-8 grid gap-4 md:grid-cols-4">
           {[
-            { icon: Camera, title: "Snap a selfie", body: "Upload or take a photo. We never share it." },
-            { icon: Sparkles, title: "Try the cut", body: "AI overlays styles on your face in real time." },
-            { icon: CalendarCheck, title: "Pick a slot", body: "Live availability — no double bookings." },
-            { icon: CreditCard, title: "Prepay & lock in", body: "Stripe secures your seat. Barber sees everything." },
+            {
+              icon: Camera,
+              title: "Snap a selfie",
+              body: "Upload or take a photo to start with Cutline AI.",
+            },
+            {
+              icon: Sparkles,
+              title: "Try the cut",
+              body: "Cutline AI overlays styles on your face in real time.",
+            },
+            {
+              icon: CalendarCheck,
+              title: "Pick a slot",
+              body: "Live availability — no double bookings.",
+            },
+            {
+              icon: CreditCard,
+              title: "Prepay & lock in",
+              body: "Stripe secures your seat. Your barber sees everything.",
+            },
           ].map(({ icon: Icon, title, body }) => (
             <div key={title} className="card">
               <Icon className="h-5 w-5 text-cartel-300" />
@@ -116,11 +130,14 @@ export default async function Home() {
         <div className="card overflow-hidden p-0">
           <div className="grid md:grid-cols-2">
             <div className="p-8 md:p-12">
-              <h3 className="font-display text-2xl md:text-3xl">Run by barbers, built for the chair.</h3>
+              <h3 className="font-display text-2xl md:text-3xl">
+                Run by barbers, built for the chair.
+              </h3>
               <p className="mt-3 text-bone-200/80">
-                The Cutting Cartel is Dallas-grown — Brian Williams and crew built Cutline AI
-                because every cut starts with the same problem: explaining what you want. Now you
-                show up with the reference already locked in.
+                The Cutting Cartel is Dallas-grown — Brian Williams and crew. Every cut starts with
+                the same problem: explaining what you want. So we built{" "}
+                <span className="font-semibold text-cartel-300">Cutline AI</span> right into the
+                site. Show up with the reference already locked in.
               </p>
               <div className="mt-6 flex gap-3">
                 <Link href="/booking" className="btn-primary">

@@ -1,11 +1,11 @@
 import { ImageResponse } from "next/og";
 
 export const runtime = "edge";
-export const alt = "Cutline AI · The Cutting Cartel";
+export const alt = "The Cutting Cartel — Dallas, TX";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
-// Static landing-page OG card. Lush, brand-perfect, gold-on-ink.
+// Brand-hero OG card. The Cutting Cartel up top, Cutline AI as the feature.
 export default async function OG() {
   return new ImageResponse(
     (
@@ -44,7 +44,6 @@ export default async function OG() {
           }}
         />
 
-        {/* content */}
         <div
           style={{
             position: "relative",
@@ -74,19 +73,17 @@ export default async function OG() {
               >
                 ✂
               </div>
-              <div style={{ display: "flex", flexDirection: "column" }}>
-                <div style={{ fontSize: 28, fontWeight: 700, letterSpacing: -0.5 }}>Cutline AI</div>
-                <div
-                  style={{
-                    fontSize: 14,
-                    letterSpacing: 4,
-                    textTransform: "uppercase",
-                    color: "#f5c46b",
-                    opacity: 0.85,
-                  }}
-                >
-                  The Cutting Cartel
-                </div>
+              <div
+                style={{
+                  fontSize: 22,
+                  letterSpacing: 6,
+                  textTransform: "uppercase",
+                  color: "#f5c46b",
+                  fontWeight: 700,
+                  display: "flex",
+                }}
+              >
+                Dallas · Texas
               </div>
             </div>
 
@@ -102,35 +99,35 @@ export default async function OG() {
                 gap: 8,
               }}
             >
-              ✨ AI hairstyle try-on
+              ✨ Powered by Cutline AI
             </div>
           </div>
 
-          {/* hero copy */}
+          {/* hero name — THE CUTTING CARTEL */}
           <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
             <div
               style={{
-                fontSize: 110,
-                fontWeight: 800,
-                letterSpacing: -3,
-                lineHeight: 0.95,
+                fontSize: 132,
+                fontWeight: 900,
+                letterSpacing: -4,
+                lineHeight: 0.92,
                 color: "#fafaf7",
                 display: "flex",
                 flexDirection: "column",
               }}
             >
-              <span>See the cut.</span>
-              <span style={{ color: "#f5c46b" }}>Lock the line.</span>
+              <span>The Cutting</span>
+              <span style={{ color: "#f5c46b" }}>Cartel.</span>
             </div>
-            <div style={{ fontSize: 28, color: "rgba(250,250,247,0.75)", marginTop: 12 }}>
-              Try on hairstyles with AI · book your barber · prepay the chair
+            <div style={{ fontSize: 28, color: "rgba(250,250,247,0.75)", marginTop: 12, display: "flex" }}>
+              Book the chair · prepay online · try on your cut with AI
             </div>
           </div>
 
           {/* bottom row */}
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
             <div style={{ display: "flex", gap: 12 }}>
-              {["Fade", "Taper", "Textured", "Skin", "Design"].map((s) => (
+              {["Fades", "Tapers", "Designs", "Beards", "Edge-Ups"].map((s) => (
                 <div
                   key={s}
                   style={{
@@ -148,7 +145,9 @@ export default async function OG() {
               ))}
             </div>
             <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
-              <div style={{ fontSize: 18, color: "rgba(250,250,247,0.6)" }}>cuttingcartel.com</div>
+              <div style={{ fontSize: 18, color: "rgba(250,250,247,0.6)", display: "flex" }}>
+                cuttingcartel.com
+              </div>
               <div
                 style={{
                   width: 240,

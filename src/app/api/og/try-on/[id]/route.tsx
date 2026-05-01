@@ -74,16 +74,19 @@ export async function GET(_req: Request, { params }: { params: { id: string } })
                 ✂
               </div>
               <div style={{ display: "flex", flexDirection: "column" }}>
-                <div style={{ fontSize: 24, fontWeight: 700 }}>Cutline AI</div>
+                <div style={{ fontSize: 24, fontWeight: 800, letterSpacing: -0.5 }}>
+                  The Cutting Cartel
+                </div>
                 <div
                   style={{
                     fontSize: 12,
                     letterSpacing: 3,
                     textTransform: "uppercase",
                     color: "#f5c46b",
+                    display: "flex",
                   }}
                 >
-                  The Cutting Cartel
+                  Cutline AI · Dallas, TX
                 </div>
               </div>
             </div>

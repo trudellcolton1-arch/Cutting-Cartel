@@ -16,16 +16,19 @@ export function SiteHeader() {
             <Scissors className="h-4 w-4" strokeWidth={2.5} />
           </span>
           <div className="leading-tight">
-            <div className="font-display text-lg tracking-wide">Cutline AI</div>
+            <div className="font-display text-lg tracking-wide">The Cutting Cartel</div>
             <div className="text-[10px] uppercase tracking-[0.2em] text-bone-200/60">
-              The Cutting Cartel
+              Dallas, TX
             </div>
           </div>
         </Link>
 
         <nav className="hidden items-center gap-6 text-sm md:flex">
-          <Link href="/try-on" className="text-bone-100 hover:text-cartel-300">
+          <Link href="/try-on" className="flex items-center gap-1.5 text-bone-100 hover:text-cartel-300">
             Try On
+            <span className="rounded-full border border-cartel-500/40 bg-cartel-500/10 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wider text-cartel-300">
+              Cutline AI
+            </span>
           </Link>
           <Link href="/booking" className="text-bone-100 hover:text-cartel-300">
             Book
