@@ -10,7 +10,16 @@ export async function GET(_req: Request, { params }: { params: { id: string } })
   const appt = await prisma.appointment.findUnique({
     where: { id: params.id },
     include: {
-      barber: { include: { user: { select: { name: true, email: true } } } },
+      barber: {
+        select: {
+          id: true,
+          userId: true,
+          displayName: true,
+          shopName: true,
+          city: true,
+          user: { select: { name: true, email: true } },
+        },
+      },
       hairstyle: true,
       tryOnSession: true,
       payment: true,

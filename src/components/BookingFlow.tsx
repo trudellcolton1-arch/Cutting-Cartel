@@ -48,6 +48,7 @@ export function BookingFlow({ barbers, tryOn }: { barbers: Barber[]; tryOn: TryO
   const [slots, setSlots] = useState<string[]>([]);
   const [slotMinutes, setSlotMinutes] = useState<number>(45);
   const [selectedSlot, setSelectedSlot] = useState<string | null>(null);
+  const [blockedUntil, setBlockedUntil] = useState<string | null>(null);
   const [notes, setNotes] = useState<string>(tryOn?.notes ?? "");
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -73,14 +74,20 @@ export function BookingFlow({ barbers, tryOn }: { barbers: Barber[]; tryOn: TryO
     let cancelled = false;
     setLoading(true);
     setSelectedSlot(null);
+    setError(null);
+    setBlockedUntil(null);
     fetch(`/api/availability?barberId=${barberId}&date=${date}`)
-      .then((r) => r.json())
+      .then(async (r) => {
+        if (!r.ok) throw new Error(`HTTP ${r.status}`);
+        return r.json();
+      })
       .then((j) => {
         if (cancelled) return;
         setSlots(j.slots ?? []);
         setSlotMinutes(j.slotMinutes ?? 45);
+        setBlockedUntil(j.blockedUntil ?? null);
       })
-      .catch(() => setError("Could not load availability."))
+      .catch(() => !cancelled && setError("Couldn't reach the schedule. Try again."))
       .finally(() => !cancelled && setLoading(false));
     return () => {
       cancelled = true;
@@ -245,7 +252,19 @@ export function BookingFlow({ barbers, tryOn }: { barbers: Barber[]; tryOn: TryO
           {loading ? (
             <div className="mt-3 text-sm text-bone-200/60">Loading slots…</div>
           ) : slots.length === 0 ? (
-            <div className="mt-3 text-sm text-bone-200/60">No openings on this day. Try another.</div>
+            <div className="mt-3 text-sm text-bone-200/60">
+              {blockedUntil
+                ? `Brian's chair is fully booked through ${formatInTimeZone(
+                    new Date(blockedUntil),
+                    SHOP_TZ,
+                    "MMM d"
+                  )}. First open day is ${formatInTimeZone(
+                    new Date(blockedUntil),
+                    SHOP_TZ,
+                    "EEE MMM d"
+                  )}.`
+                : "No openings on this day. Try another."}
+            </div>
           ) : (
             <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4">
               {slots.map((iso) => {

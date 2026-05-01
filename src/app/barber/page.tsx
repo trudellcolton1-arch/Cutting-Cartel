@@ -19,6 +19,17 @@ export default async function BarberDashboard() {
 
   const barber = await prisma.barber.findUnique({
     where: { userId: session.user.id },
+    select: {
+      id: true,
+      displayName: true,
+      shopName: true,
+      city: true,
+      bio: true,
+      basePriceCents: true,
+      slotMinutes: true,
+      workingHours: true,
+      isActive: true,
+    },
   });
   if (!barber) {
     return (

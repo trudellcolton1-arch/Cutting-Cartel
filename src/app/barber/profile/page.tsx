@@ -9,7 +9,16 @@ export const dynamic = "force-dynamic";
 export default async function BarberProfile() {
   const session = await getServerSession(authOptions);
   if (!session?.user?.id) redirect("/auth/signin");
-  const barber = await prisma.barber.findUnique({ where: { userId: session.user.id } });
+  const barber = await prisma.barber.findUnique({
+    where: { userId: session.user.id },
+    select: {
+      displayName: true,
+      shopName: true,
+      city: true,
+      slotMinutes: true,
+      basePriceCents: true,
+    },
+  });
   if (!barber) redirect("/");
 
   return (

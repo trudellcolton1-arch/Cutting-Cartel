@@ -20,9 +20,23 @@ export default async function CustomerDashboard() {
   const session = await getServerSession(authOptions);
   if (!session?.user?.id) redirect("/auth/signin?callbackUrl=/dashboard");
 
+  // Explicit barber select so this page survives schema migrations where new
+  // Barber columns haven't been ALTER'd into the live DB yet.
   const appts = await prisma.appointment.findMany({
     where: { customerId: session.user.id },
-    include: { barber: true, hairstyle: true, payment: true, tryOnSession: true },
+    include: {
+      barber: {
+        select: {
+          id: true,
+          displayName: true,
+          shopName: true,
+          city: true,
+        },
+      },
+      hairstyle: true,
+      payment: true,
+      tryOnSession: true,
+    },
     orderBy: { startsAt: "desc" },
   });
 

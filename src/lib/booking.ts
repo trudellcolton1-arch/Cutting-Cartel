@@ -1,6 +1,5 @@
 import { addDays } from "date-fns";
 import { format as formatTz, fromZonedTime, formatInTimeZone } from "date-fns-tz";
-import type { Barber } from "@prisma/client";
 import { safeJson } from "@/lib/utils";
 
 type Hours = Record<string, [string, string] | null>;
@@ -31,9 +30,12 @@ export function shopDayBounds(yyyymmdd: string): { startUtc: Date; endUtc: Date 
  * Generate every potential start time on a given calendar day in the shop's
  * timezone. Returns UTC Date objects that the client / email can render into
  * any zone.
+ *
+ * Permissive `workingHours: unknown` so callers can pass results from a
+ * fallback query (when newer columns don't yet exist) without casting.
  */
 export function generateSlots(
-  barber: Pick<Barber, "workingHours" | "slotMinutes">,
+  barber: { workingHours: unknown; slotMinutes: number },
   dateStr: string
 ): Date[] {
   const hours = safeJson<Hours>(barber.workingHours, {});
