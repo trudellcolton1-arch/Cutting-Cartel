@@ -7,22 +7,15 @@ import { SiteFooter } from "@/components/SiteFooter";
 import { MobileTabBar } from "@/components/MobileTabBar";
 
 // Normalize a possibly-malformed URL string. Trims whitespace, collapses
-// duplicated "https://" prefixes (a common copy-paste typo), and falls back
-// to the production domain if parsing still fails. This keeps build-time
-// prerender from crashing on a typo'd env var.
+// duplicated "https://" prefixes, and falls back to the production domain.
 function normalizeUrl(raw: string | undefined | null, fallback: string): string {
   if (!raw) return fallback;
   let s = raw.trim();
-  // collapse "https://https://...", "https:// https://...", "http:// https://..."
   s = s.replace(/^(https?:\/\/\s*)+(https?:\/\/)/i, "$2");
-  // strip leading whitespace inside the URL
   s = s.replace(/^\s+/, "");
-  // if it doesn't start with http(s)://, prepend https://
   if (!/^https?:\/\//i.test(s)) s = `https://${s}`;
-  // strip any internal whitespace
   s = s.replace(/\s+/g, "");
   try {
-    // validate
     new URL(s);
     return s;
   } catch {
@@ -30,11 +23,8 @@ function normalizeUrl(raw: string | undefined | null, fallback: string): string 
   }
 }
 
-const FALLBACK_URL = "https://cuttingcartel.com";
+const FALLBACK_URL = "https://247cuts.com";
 
-// Resolve the absolute URL the scraper / browser is actually using so the
-// og:image href points to the same host the page was loaded from. Falls back
-// to NEXT_PUBLIC_APP_URL or the production domain.
 function getAppUrl() {
   try {
     const h = headers();
@@ -61,36 +51,36 @@ export async function generateMetadata(): Promise<Metadata> {
 
   return {
     title: {
-      default: "The Cutting Cartel — Dallas's premier barber experience",
-      template: "%s · The Cutting Cartel",
+      default: "24/7 Cuts — Dallas's premier barber experience",
+      template: "%s · 24/7 Cuts",
     },
     description:
-      "The Cutting Cartel — Dallas, TX. Book your chair, prepay online, and use Cutline AI to try on your next cut before you sit down.",
+      "24/7 Cuts — Dallas, TX. Book your chair, prepay online, and use Cutline AI to try on your next cut before you sit down.",
     metadataBase: new URL(APP_URL),
     openGraph: {
-      title: "The Cutting Cartel",
+      title: "24/7 Cuts",
       description:
         "Dallas barbershop. Book your chair, prepay, and use Cutline AI to try on your cut before the clippers touch your head.",
       url: APP_URL,
       type: "website",
-      siteName: "The Cutting Cartel",
+      siteName: "24/7 Cuts",
       images: [
         {
           url: OG_IMAGE,
           secureUrl: OG_IMAGE,
           width: 1200,
           height: 630,
-          alt: "The Cutting Cartel — Dallas, TX",
+          alt: "24/7 Cuts — Dallas, TX",
           type: "image/png",
         },
       ],
     },
     twitter: {
       card: "summary_large_image",
-      title: "The Cutting Cartel",
+      title: "24/7 Cuts",
       description:
         "Dallas barbershop. Book your chair, prepay, try on your cut with Cutline AI.",
-      creator: "@cuttingcartel",
+      creator: "@247cuts",
       images: [OG_IMAGE],
     },
   };
@@ -98,8 +88,6 @@ export async function generateMetadata(): Promise<Metadata> {
 
 export const viewport: Viewport = {
   themeColor: "#0a0a0b",
-  // viewport-fit=cover lets us paint into the iOS notch / home-bar area
-  // and use env(safe-area-inset-*) for tab-bar / header padding
   viewportFit: "cover",
   width: "device-width",
   initialScale: 1,
@@ -111,17 +99,15 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en">
       <head>
-        {/* iOS standalone PWA polish */}
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-        <meta name="apple-mobile-web-app-title" content="Cutting Cartel" />
+        <meta name="apple-mobile-web-app-title" content="24/7 Cuts" />
         <meta name="mobile-web-app-capable" content="yes" />
         <meta name="format-detection" content="telephone=no" />
       </head>
       <body className="min-h-screen overflow-x-hidden bg-ink-900 text-bone-50">
         <Providers>
           <SiteHeader />
-          {/* bottom padding leaves room for the mobile tab bar (h-14 + safe area) */}
           <main className="min-h-[calc(100vh-12rem)] pb-20 md:pb-0">{children}</main>
           <SiteFooter />
           <MobileTabBar />

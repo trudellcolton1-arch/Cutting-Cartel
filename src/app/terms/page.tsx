@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 export const metadata: Metadata = {
   title: "Terms of Service",
   description:
-    "The agreement between you and The Cutting Cartel when you book a chair, prepay, or use Cutline AI.",
+    "The agreement between you and 24/7 Cuts when you book a chair, prepay, or use Cutline AI.",
 };
 
 const LAST_UPDATED = "May 1, 2026";
@@ -12,21 +12,21 @@ export default function TermsOfService() {
   return (
     <article className="mx-auto max-w-3xl px-4 py-16">
       <header className="mb-10">
-        <p className="text-xs uppercase tracking-[0.2em] text-cartel-300">The Cutting Cartel</p>
+        <p className="text-xs uppercase tracking-[0.2em] text-cartel-300">24/7 Cuts</p>
         <h1 className="mt-2 font-display text-4xl tracking-tight md:text-5xl">Terms of Service</h1>
         <p className="mt-3 text-sm text-bone-200/60">Last updated · {LAST_UPDATED}</p>
       </header>
 
       <div className="space-y-8 text-bone-100/85 leading-relaxed">
         <Section title="The short version">
-          By using cuttingcartel.com you agree to these terms. Bookings require prepayment.
+          By using 247cuts.com you agree to these terms. Bookings require prepayment.
           Cancel at least 12 hours before your appointment for a full refund. Don&apos;t upload
           photos of anyone but yourself. We reserve the right to cancel bookings that violate
           these rules.
         </Section>
 
         <Section title="1. Who&apos;s on the hook">
-          These terms are an agreement between you and The Cutting Cartel, a barbershop
+          These terms are an agreement between you and 24/7 Cuts, a mobile barber service
           operating in Dallas, Texas, run by Brian Williams. By creating an account, booking an
           appointment, or using Cutline AI, you accept these terms in full. If you don&apos;t
           accept them, don&apos;t use the service.
@@ -94,8 +94,8 @@ export default function TermsOfService() {
         </Section>
 
         <Section title="9. Intellectual property">
-          The site, branding (&quot;The Cutting Cartel&quot;, &quot;Cutline AI&quot;, our logos),
-          and the underlying code are owned by The Cutting Cartel. You may not copy, reuse,
+          The site, branding (&quot;24/7 Cuts&quot;, &quot;Cutline AI&quot;, our logos),
+          and the underlying code are owned by 24/7 Cuts. You may not copy, reuse,
           rebrand, or sublicense any of it without written permission. You retain all rights to
           your own photos.
         </Section>
@@ -131,9 +131,9 @@ export default function TermsOfService() {
         </Section>
 
         <Section title="15. Contact">
-          The Cutting Cartel · Dallas, TX ·{" "}
-          <a href="mailto:bookings@cuttingcartel.com" className="text-cartel-300 hover:text-cartel-100">
-            bookings@cuttingcartel.com
+          24/7 Cuts · Dallas, TX ·{" "}
+          <a href="mailto:bookings@247cuts.com" className="text-cartel-300 hover:text-cartel-100">
+            bookings@247cuts.com
           </a>
         </Section>
       </div>

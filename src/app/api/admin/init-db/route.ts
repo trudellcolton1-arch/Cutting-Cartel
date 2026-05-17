@@ -72,8 +72,8 @@ const STATEMENTS: string[] = [
     "userId" TEXT NOT NULL UNIQUE,
     "displayName" TEXT NOT NULL,
     "bio" TEXT,
-    "shopName" TEXT NOT NULL DEFAULT 'The Cutting Cartel',
-    "city" TEXT NOT NULL DEFAULT 'Dallas, TX',
+    "shopName" TEXT NOT NULL DEFAULT '24/7 Cuts',
+    "city" TEXT NOT NULL DEFAULT 'Dallas / DFW',
     "avatarUrl" TEXT,
     "basePriceCents" INTEGER NOT NULL DEFAULT 4500,
     "workingHours" JSONB NOT NULL DEFAULT '{"mon":["10:00","19:00"],"tue":["10:00","19:00"],"wed":["10:00","19:00"],"thu":["10:00","19:00"],"fri":["10:00","20:00"],"sat":["09:00","18:00"],"sun":null}'::jsonb,
@@ -221,10 +221,10 @@ const HAIRSTYLES = [
 
 const BARBERS = [
   {
-    email: "brian@cuttingcartel.com",
+    email: "brian@247cuts.com",
     name: "Brian Williams",
     displayName: "Brian Williams",
-    bio: "Founder of The Cutting Cartel. Dallas, TX. Known for skin fades and beard sculpts.",
+    bio: "Founder of 24/7 Cuts. Mobile barber serving the DFW Metroplex. Known for skin fades and beard sculpts. We come to you.",
     basePriceCents: 6500,
     slotMinutes: 45,
   },
@@ -233,7 +233,7 @@ const BARBERS = [
 // Removed barbers — wipe from prior seeds. We delete the Barber row first
 // (the User row may still want to exist if they have past appointments, but
 // since these were placeholder seeds they have no real data tied to them).
-const REMOVED_BARBER_EMAILS = ["marcus@cuttingcartel.com"];
+const REMOVED_BARBER_EMAILS = ["marcus@247cuts.com"];
 
 export async function GET(_req: Request) {
   const log: string[] = [];
@@ -281,6 +281,8 @@ export async function GET(_req: Request) {
         update: {
           displayName: b.displayName,
           bio: b.bio,
+          shopName: "24/7 Cuts",
+          city: "Dallas / DFW",
           basePriceCents: 6000,
           priceAdultCents: 6000,
           priceKidCents: 2000,
@@ -292,6 +294,8 @@ export async function GET(_req: Request) {
           userId: user.id,
           displayName: b.displayName,
           bio: b.bio,
+          shopName: "24/7 Cuts",
+          city: "Dallas / DFW",
           basePriceCents: 6000,
           priceAdultCents: 6000,
           priceKidCents: 2000,
@@ -320,10 +324,10 @@ export async function GET(_req: Request) {
 
     const demoHash = await bcrypt.hash("demo12345", 12);
     await prisma.user.upsert({
-      where: { email: "demo@cuttingcartel.com" },
+      where: { email: "demo@247cuts.com" },
       update: { name: "Demo Customer", passwordHash: demoHash },
       create: {
-        email: "demo@cuttingcartel.com",
+        email: "demo@247cuts.com",
         name: "Demo Customer",
         role: "CUSTOMER",
         passwordHash: demoHash,

@@ -39,14 +39,14 @@ export default async function Icon192() {
             borderRadius: 70,
             background: "#d99a2b",
             color: "#0a0a0b",
-            fontSize: 92,
+            fontSize: 64,
             fontWeight: 900,
-            letterSpacing: -4,
+            letterSpacing: -2,
             fontFamily: "ui-serif, Georgia, serif",
             boxShadow: "0 18px 50px rgba(217,154,43,0.55)",
           }}
         >
-          TC
+          247
         </div>
       </div>
     ),

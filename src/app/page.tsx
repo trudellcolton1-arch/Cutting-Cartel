@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowRight, Camera, CalendarCheck, CreditCard, Sparkles } from "lucide-react";
+import { ArrowRight, Camera, CalendarCheck, CreditCard, Sparkles, MapPin } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
@@ -43,21 +43,22 @@ export default async function Home() {
         <div className="relative mx-auto max-w-6xl px-4 pt-12 pb-16 sm:pt-16 sm:pb-20 md:pt-24 md:pb-28">
           <div className="flex flex-col items-start gap-5 sm:gap-6">
             <span className="pill border-cartel-500/40 bg-cartel-500/10 text-cartel-300">
-              <Sparkles className="h-3.5 w-3.5" /> Serving the DFW Metroplex
+              <Sparkles className="h-3.5 w-3.5" /> Mobile barber · Serving the DFW Metroplex
             </span>
             <h1 className="font-display text-[2.75rem] leading-[0.95] tracking-tight sm:text-6xl md:text-8xl">
-              The Cutting
+              24/7
               <br />
-              <span className="text-cartel-300">Cartel.</span>
+              <span className="text-cartel-300">Cuts.</span>
             </h1>
             <p className="max-w-xl text-sm text-bone-100/80 sm:text-base md:text-lg">
-              Dallas&apos;s premier barber experience. Book your chair, prepay online, and use{" "}
-              <span className="font-semibold text-cartel-300">Cutline AI</span> — our in-house
-              hairstyle try-on — to lock the look before you sit down.
+              Dallas&apos;s mobile barber. <span className="font-semibold text-bone-50">We come to you</span> — home, office, hotel,
+              event — anytime. Book a slot, prepay online, and use{" "}
+              <span className="font-semibold text-cartel-300">Cutline AI</span> to lock the look
+              before Brian shows up at your door.
             </p>
             <div className="flex flex-wrap items-center gap-3">
               <Link href="/booking" className="btn-primary">
-                Book a chair <ArrowRight className="h-4 w-4" />
+                Book a cut <ArrowRight className="h-4 w-4" />
               </Link>
               <Link href="/try-on" className="btn-ghost">
                 Try a cut with Cutline AI
@@ -81,17 +82,17 @@ export default async function Home() {
             {
               icon: Sparkles,
               title: "Try the cut",
-              body: "Cutline AI overlays styles on your face in real time.",
+              body: "Cutline AI generates a photoreal preview of you with the new style.",
             },
             {
               icon: CalendarCheck,
-              title: "Pick a slot",
-              body: "Live availability — no double bookings.",
+              title: "Pick a time",
+              body: "Live availability — we come to your address anywhere in DFW.",
             },
             {
-              icon: CreditCard,
-              title: "Prepay & lock in",
-              body: "Stripe secures your seat. Your barber sees everything.",
+              icon: MapPin,
+              title: "We show up",
+              body: "Brian arrives with the chair, the clippers, and your reference cut in hand.",
             },
           ].map(({ icon: Icon, title, body }) => (
             <div key={title} className="card">
@@ -147,17 +148,18 @@ export default async function Home() {
           <div className="grid md:grid-cols-2">
             <div className="p-8 md:p-12">
               <h3 className="font-display text-2xl md:text-3xl">
-                Run by barbers, built for the chair.
+                We come to you. Anytime.
               </h3>
               <p className="mt-3 text-bone-200/80">
-                The Cutting Cartel is Dallas-grown — Brian Williams and crew. Every cut starts with
-                the same problem: explaining what you want. So we built{" "}
+                24/7 Cuts is a mobile barber service run by Brian Williams out of Dallas. No more
+                driving to a shop, sitting in a waiting room, or hoping the cut comes out right.
+                We&apos;ll show up at your door with the chair and clippers — built{" "}
                 <span className="font-semibold text-cartel-300">Cutline AI</span> right into the
-                site. Show up with the reference already locked in.
+                site so you can lock the look before we arrive.
               </p>
               <div className="mt-6 flex gap-3">
                 <Link href="/booking" className="btn-primary">
-                  Book a chair
+                  Book a cut
                 </Link>
                 <Link href="/auth/signin" className="btn-ghost">
                   Client login

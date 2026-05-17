@@ -68,14 +68,14 @@ export default async function AppleIcon() {
             borderRadius: 66,
             background: "#d99a2b",
             color: "#0a0a0b",
-            fontSize: 88,
+            fontSize: 60,
             fontWeight: 900,
-            letterSpacing: -4,
+            letterSpacing: -2,
             boxShadow: "0 16px 48px rgba(217,154,43,0.55)",
             fontFamily: "ui-serif, Georgia, serif",
           }}
         >
-          TC
+          247
         </div>
       </div>
     ),

@@ -19,7 +19,7 @@ export function SiteHeader() {
             <Scissors className="h-4 w-4" strokeWidth={2.5} />
           </span>
           <div className="leading-tight">
-            <div className="font-display text-base tracking-wide sm:text-lg">The Cutting Cartel</div>
+            <div className="font-display text-base tracking-wide sm:text-lg">24/7 Cuts</div>
             <div className="text-[10px] uppercase tracking-[0.2em] text-bone-200/60">Dallas, TX</div>
           </div>
         </Link>

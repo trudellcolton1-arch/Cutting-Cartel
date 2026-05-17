@@ -57,14 +57,14 @@ const wrap = (title: string, body: string) => `<!doctype html>
     <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px;">
       <div style="width:40px;height:40px;border-radius:20px;background:#d99a2b;color:#0a0a0b;display:inline-block;text-align:center;line-height:40px;font-weight:800;font-size:20px;">✂</div>
       <div>
-        <div style="font-size:18px;font-weight:700;letter-spacing:-0.3px;">The Cutting Cartel</div>
+        <div style="font-size:18px;font-weight:700;letter-spacing:-0.3px;">24/7 Cuts</div>
         <div style="font-size:11px;letter-spacing:3px;text-transform:uppercase;color:#f5c46b;">Cutline AI · Dallas, TX</div>
       </div>
     </div>
     <h1 style="font-size:24px;font-weight:800;margin:0 0 12px;">${title}</h1>
     ${body}
     <div style="margin-top:32px;padding-top:16px;border-top:1px solid #26262d;font-size:11px;color:rgba(250,250,247,0.5);">
-      The Cutting Cartel · Dallas, TX · cuttingcartel.com
+      24/7 Cuts · Dallas, TX · 247cuts.com
     </div>
   </div>
 </body></html>`;
@@ -203,7 +203,7 @@ export async function sendCustomerAppointmentEmail(a: AppointmentEmail) {
   const html = wrap(
     "You're booked.",
     `<p style="margin:0 0 8px;color:rgba(250,250,247,0.8);font-size:14px;line-height:1.5;">
-      Thanks for booking with The Cutting Cartel. Your barber has your reference cut,
+      Thanks for booking with 24/7 Cuts. Your barber has your reference cut,
       your notes, and your payment. Just show up.
     </p>
     ${detailsTable}

@@ -18,13 +18,13 @@ export default async function Icon() {
           justifyContent: "center",
           background: "#0a0a0b",
           color: "#d99a2b",
-          fontSize: 38,
+          fontSize: 28,
           fontWeight: 900,
-          letterSpacing: -2,
+          letterSpacing: -1,
           fontFamily: "ui-serif, Georgia, serif",
         }}
       >
-        TC
+        247
       </div>
     ),
     { ...size }

@@ -107,7 +107,7 @@ export async function POST(req: Request) {
           },
         });
         if (appt) {
-          const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "https://cuttingcartel.com";
+          const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "https://247cuts.com";
           const payload = {
             appointmentId: appt.id,
             startsAt: appt.startsAt,
@@ -172,7 +172,7 @@ export async function POST(req: Request) {
           unit_amount: priceCents,
           product_data: {
             name: `${cutTypeLabel} with ${barber.displayName}`,
-            description: `The Cutting Cartel · ${formatShopDateTime(start, "EEE, MMM d · h:mm a 'CT'")}`,
+            description: `24/7 Cuts · ${formatShopDateTime(start, "EEE, MMM d · h:mm a 'CT'")}`,
           },
         },
       },

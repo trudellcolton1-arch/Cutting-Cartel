@@ -58,14 +58,14 @@ export default async function Icon512() {
             borderRadius: 188,
             background: "#d99a2b",
             color: "#0a0a0b",
-            fontSize: 248,
+            fontSize: 172,
             fontWeight: 900,
-            letterSpacing: -10,
+            letterSpacing: -6,
             fontFamily: "ui-serif, Georgia, serif",
             boxShadow: "0 50px 140px rgba(217,154,43,0.55)",
           }}
         >
-          TC
+          247
         </div>
       </div>
     ),

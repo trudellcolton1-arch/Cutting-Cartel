@@ -56,10 +56,10 @@ const STYLES = [
 
 const BARBERS = [
   {
-    email: "brian@cuttingcartel.com",
+    email: "brian@247cuts.com",
     name: "Brian Williams",
     displayName: "Brian Williams",
-    bio: "Founder of The Cutting Cartel. Dallas, TX. Known for skin fades and beard sculpts.",
+    bio: "Founder of 24/7 Cuts. Mobile barber serving the DFW Metroplex. Known for skin fades and beard sculpts. We come to you.",
     basePriceCents: 6500,
     slotMinutes: 45,
   },
@@ -102,13 +102,13 @@ async function main() {
     });
   }
 
-  console.log("→ Seeding demo customer (demo@cuttingcartel.com / demo12345)…");
+  console.log("→ Seeding demo customer (demo@247cuts.com / demo12345)…");
   const demoHash = await bcrypt.hash("demo12345", 12);
   await prisma.user.upsert({
-    where: { email: "demo@cuttingcartel.com" },
+    where: { email: "demo@247cuts.com" },
     update: { name: "Demo Customer", passwordHash: demoHash },
     create: {
-      email: "demo@cuttingcartel.com",
+      email: "demo@247cuts.com",
       name: "Demo Customer",
       role: "CUSTOMER",
       passwordHash: demoHash,

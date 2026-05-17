@@ -1,4 +1,4 @@
-# The Cutting Cartel
+# 24/7 Cuts
 
 Dallas's premier barbershop, online. Customers book the chair, prepay through Stripe,
 and use **Cutline AI** — our in-house AI try-on powered by **FLUX.1 + PuLID** —
@@ -6,7 +6,7 @@ to generate a photoreal preview of themselves with the new cut before they sit d
 The barber gets the reference image, notes, and payment confirmation by email
 the moment the booking confirms.
 
-**Domain:** [cuttingcartel.com](https://cuttingcartel.com) · Built by Brian Williams.
+**Domain:** [247cuts.com](https://247cuts.com) · Built by Brian Williams.
 
 ---
 
@@ -90,7 +90,7 @@ Copy `.env.example` to `.env` and fill in.
 | Var | Where it comes from |
 |-----|---------------------|
 | `DATABASE_URL` | Vercel Postgres / Neon / Supabase |
-| `NEXTAUTH_URL` | Your live URL, e.g. `https://cuttingcartel.com` |
+| `NEXTAUTH_URL` | Your live URL, e.g. `https://247cuts.com` |
 | `NEXTAUTH_SECRET` | `openssl rand -base64 32` |
 | `NEXT_PUBLIC_APP_URL` | Same as `NEXTAUTH_URL` |
 
@@ -116,7 +116,7 @@ Copy `.env.example` to `.env` and fill in.
 
 #### Required for email confirmations to Brian + customers
 
-[Resend](https://resend.com) is the easiest. Sign up, verify the `cuttingcartel.com`
+[Resend](https://resend.com) is the easiest. Sign up, verify the `247cuts.com`
 domain, generate an API key.
 
 | Var | Value |
@@ -125,7 +125,7 @@ domain, generate an API key.
 | `EMAIL_SERVER_PORT` | `465` |
 | `EMAIL_SERVER_USER` | `resend` |
 | `EMAIL_SERVER_PASSWORD` | your Resend API key |
-| `EMAIL_FROM` | `The Cutting Cartel <bookings@cuttingcartel.com>` |
+| `EMAIL_FROM` | `24/7 Cuts <bookings@247cuts.com>` |
 
 #### Optional
 
@@ -143,9 +143,9 @@ Seeded accounts (rotate before deploying):
 
 | Role | Email | Password |
 |------|-------|----------|
-| Barber | `brian@cuttingcartel.com` | `changeme123` |
-| Barber | `marcus@cuttingcartel.com` | `changeme123` |
-| Customer | `demo@cuttingcartel.com` | `demo12345` |
+| Barber | `brian@247cuts.com` | `changeme123` |
+| Barber | `marcus@247cuts.com` | `changeme123` |
+| Customer | `demo@247cuts.com` | `demo12345` |
 
 ### 4. Run
 
@@ -205,7 +205,7 @@ Test card: `4242 4242 4242 4242` · any future expiry · any CVC.
 The moment Stripe confirms a customer's payment, the webhook fires
 `sendBarberAppointmentEmail` → Brian receives an email at the address tied to
 his barber user record (the `email` column on his `User` row, e.g.
-`brian@cuttingcartel.com`). The email contains:
+`brian@247cuts.com`). The email contains:
 
 - Customer name + email
 - Date / time of the booking
@@ -262,4 +262,4 @@ don't email anyone. Set Resend up before going live.
 
 ---
 
-Built for Brian Williams · The Cutting Cartel · Dallas, TX
+Built for Brian Williams · 24/7 Cuts · Dallas, TX

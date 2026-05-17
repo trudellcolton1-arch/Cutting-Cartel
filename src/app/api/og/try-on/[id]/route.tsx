@@ -75,7 +75,7 @@ export async function GET(_req: Request, { params }: { params: { id: string } })
               </div>
               <div style={{ display: "flex", flexDirection: "column" }}>
                 <div style={{ fontSize: 24, fontWeight: 800, letterSpacing: -0.5 }}>
-                  The Cutting Cartel
+                  24/7 Cuts
                 </div>
                 <div
                   style={{
@@ -132,7 +132,7 @@ export async function GET(_req: Request, { params }: { params: { id: string } })
               <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
                 <Pill>length {tryOn?.length ?? 3}</Pill>
                 <Pill>{fadeLabel}</Pill>
-                <Pill>cuttingcartel.com</Pill>
+                <Pill>247cuts.com</Pill>
               </div>
             </div>
             <Stripe />

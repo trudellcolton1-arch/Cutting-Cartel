@@ -117,7 +117,7 @@ export async function GET() {
                   display: "flex",
                 }}
               >
-                Dallas · Texas
+                Mobile Barber · DFW
               </div>
             </div>
 
@@ -140,17 +140,17 @@ export async function GET() {
           <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
             <div
               style={{
-                fontSize: 132,
+                fontSize: 200,
                 fontWeight: 900,
-                letterSpacing: -4,
+                letterSpacing: -6,
                 lineHeight: 0.92,
                 color: "#fafaf7",
                 display: "flex",
                 flexDirection: "column",
               }}
             >
-              <span style={{ display: "flex" }}>The Cutting</span>
-              <span style={{ color: "#f5c46b", display: "flex" }}>Cartel.</span>
+              <span style={{ display: "flex" }}>24/7</span>
+              <span style={{ color: "#f5c46b", display: "flex" }}>Cuts.</span>
             </div>
             <div
               style={{
@@ -160,7 +160,7 @@ export async function GET() {
                 display: "flex",
               }}
             >
-              Book the chair · prepay online · try on your cut with AI
+              Mobile barber · we come to you · book + prepay online
             </div>
           </div>
 
@@ -199,7 +199,7 @@ export async function GET() {
                   display: "flex",
                 }}
               >
-                cuttingcartel.com
+                247cuts.com
               </div>
               <Stripe />
             </div>

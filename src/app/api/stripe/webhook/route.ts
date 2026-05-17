@@ -70,7 +70,7 @@ export async function POST(req: Request) {
             });
             if (appt) {
               const appUrl =
-                process.env.NEXT_PUBLIC_APP_URL ?? "https://cuttingcartel.com";
+                process.env.NEXT_PUBLIC_APP_URL ?? "https://247cuts.com";
               const payload = {
                 appointmentId: appt.id,
                 startsAt: appt.startsAt,

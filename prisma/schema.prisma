@@ -79,8 +79,8 @@ model Barber {
   userId      String   @unique
   displayName String
   bio         String?
-  shopName    String   @default("The Cutting Cartel")
-  city        String   @default("Dallas, TX")
+  shopName    String   @default("24/7 Cuts")
+  city        String   @default("Dallas / DFW")
   avatarUrl   String?
   // base price retained for back-compat; new bookings use the per-cut prices below
   basePriceCents Int   @default(6000)

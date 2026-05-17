@@ -11,6 +11,6 @@ export const stripe = new Stripe(process.env.STRIPE_SECRET_KEY ?? "sk_test_place
   typescript: true,
   appInfo: {
     name: "Cutline AI",
-    url: "https://cuttingcartel.com",
+    url: "https://247cuts.com",
   },
 });

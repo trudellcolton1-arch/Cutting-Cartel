@@ -1,15 +1,12 @@
 import type { MetadataRoute } from "next";
 
-// Full PWA manifest tuned for Google Play / App Store packagers.
-// PWABuilder's score reflects how many of these fields are present;
-// every field below is here for a reason.
 export default function manifest(): MetadataRoute.Manifest {
   return {
     id: "/?source=pwa",
-    name: "The Cutting Cartel",
-    short_name: "Cutting Cartel",
+    name: "24/7 Cuts — Mobile Barber",
+    short_name: "24/7 Cuts",
     description:
-      "Dallas barbershop. Book your chair, prepay online, and use Cutline AI to try on your cut before you sit down.",
+      "Dallas mobile barber. Book a cut, prepay online, and we come to you. Try on hairstyles with Cutline AI before we arrive.",
     start_url: "/",
     scope: "/",
     display: "standalone",
@@ -22,42 +19,12 @@ export default function manifest(): MetadataRoute.Manifest {
     categories: ["lifestyle", "business"],
     prefer_related_applications: false,
     icons: [
-      {
-        src: "/icon",
-        sizes: "64x64",
-        type: "image/png",
-        purpose: "any",
-      },
-      {
-        src: "/icon1",
-        sizes: "192x192",
-        type: "image/png",
-        purpose: "any",
-      },
-      {
-        src: "/icon1",
-        sizes: "192x192",
-        type: "image/png",
-        purpose: "maskable",
-      },
-      {
-        src: "/icon2",
-        sizes: "512x512",
-        type: "image/png",
-        purpose: "any",
-      },
-      {
-        src: "/icon2",
-        sizes: "512x512",
-        type: "image/png",
-        purpose: "maskable",
-      },
-      {
-        src: "/apple-icon",
-        sizes: "180x180",
-        type: "image/png",
-        purpose: "any",
-      },
+      { src: "/icon", sizes: "64x64", type: "image/png", purpose: "any" },
+      { src: "/icon1", sizes: "192x192", type: "image/png", purpose: "any" },
+      { src: "/icon1", sizes: "192x192", type: "image/png", purpose: "maskable" },
+      { src: "/icon2", sizes: "512x512", type: "image/png", purpose: "any" },
+      { src: "/icon2", sizes: "512x512", type: "image/png", purpose: "maskable" },
+      { src: "/apple-icon", sizes: "180x180", type: "image/png", purpose: "any" },
     ],
     shortcuts: [
       {
@@ -68,9 +35,9 @@ export default function manifest(): MetadataRoute.Manifest {
         icons: [{ src: "/icon1", sizes: "192x192" }],
       },
       {
-        name: "Book a chair",
+        name: "Book a cut",
         short_name: "Book",
-        description: "Pick a barber, time, and prepay",
+        description: "Pick a time and we come to you",
         url: "/booking",
         icons: [{ src: "/icon1", sizes: "192x192" }],
       },

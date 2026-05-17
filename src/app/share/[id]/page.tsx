@@ -17,11 +17,11 @@ async function loadTryOn(id: string) {
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const t = await loadTryOn(params.id);
   if (!t) return { title: "Cut not found" };
-  const base = process.env.NEXT_PUBLIC_APP_URL ?? "https://cuttingcartel.com";
+  const base = process.env.NEXT_PUBLIC_APP_URL ?? "https://247cuts.com";
   const ogUrl = `${base}/api/og/try-on/${params.id}`;
   const first = (t.user?.name ?? "Someone").split(" ")[0];
   const title = `${first} locked in: ${t.hairstyle.name} · Cutline AI`;
-  const description = `AI hairstyle try-on by The Cutting Cartel — Dallas, TX. See the cut, lock the line, sit in the chair.`;
+  const description = `AI hairstyle try-on by 24/7 Cuts — Dallas, TX. See the cut, lock the line, sit in the chair.`;
   return {
     title,
     description,

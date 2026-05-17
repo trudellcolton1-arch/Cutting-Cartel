@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 export const metadata: Metadata = {
   title: "Privacy Policy",
   description:
-    "How The Cutting Cartel collects, uses, and protects your information when you book a chair or use Cutline AI.",
+    "How 24/7 Cuts collects, uses, and protects your information when you book a chair or use Cutline AI.",
 };
 
 const LAST_UPDATED = "May 1, 2026";
@@ -12,7 +12,7 @@ export default function PrivacyPolicy() {
   return (
     <article className="mx-auto max-w-3xl px-4 py-16">
       <header className="mb-10">
-        <p className="text-xs uppercase tracking-[0.2em] text-cartel-300">The Cutting Cartel</p>
+        <p className="text-xs uppercase tracking-[0.2em] text-cartel-300">24/7 Cuts</p>
         <h1 className="mt-2 font-display text-4xl tracking-tight md:text-5xl">Privacy Policy</h1>
         <p className="mt-3 text-sm text-bone-200/60">Last updated · {LAST_UPDATED}</p>
       </header>
@@ -26,10 +26,11 @@ export default function PrivacyPolicy() {
         </Section>
 
         <Section title="Who we are">
-          The Cutting Cartel (&quot;we&quot;, &quot;us&quot;) is a barbershop based in Dallas,
-          Texas. Our website (cuttingcartel.com) lets customers book appointments, prepay, and
-          try on hairstyles with our in-house AI tool, Cutline AI. Operated by Brian Williams.
-          For privacy questions: bookings@cuttingcartel.com.
+          24/7 Cuts (&quot;we&quot;, &quot;us&quot;) is a mobile barber service based in Dallas,
+          Texas, serving the DFW Metroplex. We come to you — home, office, hotel, event — and
+          our website (247cuts.com) lets customers book appointments, prepay, and try on
+          hairstyles with our in-house AI tool, Cutline AI. Operated by Brian Williams. For
+          privacy questions: bookings@247cuts.com.
         </Section>
 
         <Section title="What we collect">
@@ -117,7 +118,7 @@ export default function PrivacyPolicy() {
         </Section>
 
         <Section title="Your rights">
-          You can email <a href="mailto:bookings@cuttingcartel.com" className="text-cartel-300 hover:text-cartel-100">bookings@cuttingcartel.com</a>{" "}
+          You can email <a href="mailto:bookings@247cuts.com" className="text-cartel-300 hover:text-cartel-100">bookings@247cuts.com</a>{" "}
           at any time to:
           <ul className="mt-3 ml-5 list-disc space-y-2">
             <li>Request a copy of all data we hold about you.</li>
@@ -150,9 +151,9 @@ export default function PrivacyPolicy() {
         </Section>
 
         <Section title="Contact">
-          The Cutting Cartel · Dallas, TX ·{" "}
-          <a href="mailto:bookings@cuttingcartel.com" className="text-cartel-300 hover:text-cartel-100">
-            bookings@cuttingcartel.com
+          24/7 Cuts · Dallas, TX ·{" "}
+          <a href="mailto:bookings@247cuts.com" className="text-cartel-300 hover:text-cartel-100">
+            bookings@247cuts.com
           </a>
         </Section>
       </div>
